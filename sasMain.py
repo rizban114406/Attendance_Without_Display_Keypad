@@ -35,7 +35,7 @@ lock = threading.Lock()
 
 from sasAllAPI import sasAllAPI
 apiObject = sasAllAPI()
-
+REQUESTTIMEOUT = 5
 def configureFingerPrint():
     while True:
         try:
@@ -160,18 +160,20 @@ def takeFingerprintToEnroll(f,currentDateTime):
         result = f.searchTemplate()
         positionNumber = result[0]
         if ( positionNumber >= 0 ):
-            #GPIO INDICATOR
+            return "Already Exists"
         else:
             t.sleep(1)
             while (1):
                 x = calculateTimeDifference(currentDateTime,150)
                 desiredTask = fileObject.readDesiredTask()
-                if (desiredTask == '5' or desiredTask == '7' or x == 1):
+                y = calculateTimeDifference(currentDateTime,REQUESTTIMEOUT)
+                if (desiredTask == '5' or desiredTask == '7' or x == 1 or y == 1):
                     break
                 t.sleep(1)
                 
-            if 
-            if x != 1:
+            if y == 1:
+                return "Request Time Out"
+            elif x != 1:
                 while ( f.readImage() == False and x == 0):
                     x = calculateTimeDifference(currentDateTime,150)
                     t.sleep(1)
@@ -186,48 +188,30 @@ def takeFingerprintToEnroll(f,currentDateTime):
                             t.sleep(1)
                             pass
                         if x != 1:
-                            while ( f.readImage() == False and x == 0):
+                            while (1):
                                 x = calculateTimeDifference(currentDateTime,150)
+                                desiredTask = fileObject.readDesiredTask()
+                                y = calculateTimeDifference(currentDateTime,REQUESTTIMEOUT)
+                                if (desiredTask == '5' or desiredTask == '7' or x == 1 or y == 1):
+                                    break
                                 t.sleep(1)
-                            if x != 1:
+                            if y == 1:
+                                return "Request Time Out"
+                            elif x != 1:
                                 f.convertImage(0x01)
                                 if ( f.compareCharacteristics() == 0):
-                                    return 0
+                                    return "Finger Did Not Match Third Time"
                                 else:
-                                    return 1
+                                    return "Finger Matched"
                         else:
                             return "Time Out"
                 else:
                     return "Time Out"
             else:
                 return "Time Out"
-                
-            
-                
-                if ( f.compareCharacteristics() == 0):
-                    lcdPrint.printTwoFingersDidNotMatched()
-                    return 0
-                else:
-                    lcdPrint.printRemoveAndPutSameFinger()
-                    while ( f.readImage() == False and x == 0):
-                        x = calculateTimeDifference(currentDateTime,150)
-                        t.sleep(1)
-                        pass
-                    if x != 1:
-                        lcdPrint.printWaitAfterGivingBothFingers()
-                        f.convertImage(0x01)
-                        if ( f.compareCharacteristics() == 0):
-                            lcdPrint.printTwoFingersDidNotMatched()
-                            return 0
-                        else:
-                            return 1             
-            else:
-                lcdPrint.timeOutMessage()
-                return 0
-        
     else:
-        lcdPrint.timeOutMessage()
-        return 0
+        return "Time Out"
+
 def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId):
     characterMatrix = f.downloadCharacteristics()
     matrix = ""
