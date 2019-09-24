@@ -102,16 +102,20 @@ def updateListOfUsedTemplates(f):
             storedIndex = storedIndex + str(i) + '-'
     fileObject.updateStoredIndex(storedIndex)
     
-def checkEmployeeInfoTable():
-    templatesStoredSensor = fileObject.readStoredIndex()
-    templateStoredDatabase = dbObject.getEmployeeTemplateNumber(database)
-    notListedTemplateNumber = list(set(templateStoredDatabase) - set(templatesStoredSensor))
-    dbObject.deleteFromEmployeeInfoTableToSync(notListedTemplateNumber,database)
-    notListedTemplateNumber = list(set(templatesStoredSensor) - set(templateStoredDatabase))
-    dbObject.deleteFromEmployeeInfoTableToSync(notListedTemplateNumber,database)
-    
+def checkEmployeeInfoTable(f):
+    try:    
+        templatesStoredSensor = fileObject.readStoredIndex()
+        templateStoredDatabase = dbObject.getEmployeeTemplateNumber(database)
+        notListedTemplateNumber = list(set(templateStoredDatabase) - set(templatesStoredSensor))
+        dbObject.deleteFromEmployeeInfoTableToSync(notListedTemplateNumber,database)
+        notListedTemplateNumber = list(set(templatesStoredSensor) - set(templateStoredDatabase))
+        for deleteId in notListedTemplateNumber:
+            f.deleteTemplate(int(deleteId))
+    except Exception as e:
+        fileObject.updateExceptionMessage("sasMain{checkEmployeeInfoTable}: ",str(e))
+        
 def syncWithOtherDevices(f):
-    checkEmployeeInfoTable()
+    checkEmployeeInfoTable(f)
     try:
         receivedData = dbObject.getInfoFromEmployeeInfoTable(database)
         #        print("Existig Data {}".format(receivedData))
@@ -153,6 +157,7 @@ def calculateTimeDifference(currentDateTime,timeLimit):
 #####################################Enrollment Process################################
 
 def takeFingerprintToEnroll(f,currentDateTime):
+    print("ENROLL COMMAND RECEIVED")
     x = 0 
     while ( f.readImage() == False and x == 0):
         x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
@@ -163,55 +168,83 @@ def takeFingerprintToEnroll(f,currentDateTime):
         result = f.searchTemplate()
         positionNumber = result[0]
         if ( positionNumber >= 0 ):
+            print("FINGER ALREADY EXISTS")
             return "Already Exists"
         else:
-            t.sleep(1)
-            while (1):
+            print("FIRST FINGER TAKEN")
+            while ( f.readImage() == True and x == 0):
                 x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
-                desiredTask = fileObject.readDesiredTask()
-                y = calculateTimeDifference(currentDateTime,REQUESTTIMEOUT)
-                if (desiredTask == '5' or desiredTask == '7' or x == 1 or y == 1):
-                    break
-                t.sleep(1)             
-            if y == 1:
-                return "Request Time Out"
-            elif x != 1:
-                while ( f.readImage() == False and x == 0):
+            if x != 1:
+                print("REMOVED")
+                while (1):
                     x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
-                    t.sleep(1)
-                    pass
-                if x != 1:
-                    f.convertImage(0x02)
-                    if ( f.compareCharacteristics() == 0):
-                        return "Finger Did Not Match Second Time"
-                    else:
-                        while (fileObject.readDesiredTask() != 5 and x == 0):
-                            x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
-                            t.sleep(1)
-                            pass
-                        if x != 1:
-                            while (1):
-                                x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
-                                desiredTask = fileObject.readDesiredTask()
-                                y = calculateTimeDifference(currentDateTime,REQUESTTIMEOUT)
-                                if (desiredTask == '5' or desiredTask == '7' or x == 1 or y == 1):
-                                    break
-                                t.sleep(1)
-                            if y == 1:
-                                return "Request Time Out"
-                            elif x != 1:
-                                f.convertImage(0x01)
-                                if ( f.compareCharacteristics() == 0):
-                                    return "Finger Did Not Match Third Time"
-                                else:
-                                    return "Finger Matched"
+                    desiredTask = fileObject.readDesiredTask()
+                    y = calculateTimeDifference(currentDateTime,REQUESTTIMEOUT)
+                    if (desiredTask == '5' or desiredTask == '7' or x == 1 or y == 1):
+                        break
+                    t.sleep(1) 
+                    
+                if y == 1:
+                    return "Request Time Out"
+                elif x != 1:
+                    while ( f.readImage() == False and x == 0):
+                        x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
+                        t.sleep(1)
+                        pass
+                    if x != 1:
+                        f.convertImage(0x02)
+                        if ( f.compareCharacteristics() == 0):
+                            print("FINGERS DO NOT MATCH")
+                            return "Finger Did Not Match Second Time"
                         else:
-                            return "Time Out"
+                            print("SECOND FINGER TAKEN")
+                            while ( f.readImage() == True and x == 0):
+                                x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
+                            if x != 1:
+                                print("REMOVED")
+                                while (1):
+                                    x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
+                                    desiredTask = fileObject.readDesiredTask()
+                                    y = calculateTimeDifference(currentDateTime,REQUESTTIMEOUT)
+                                    if (desiredTask == '5' or desiredTask == '7' or x == 1 or y == 1):
+                                        break
+                                    t.sleep(1)
+                                if y == 1:
+                                    return "Request Time Out"
+                                elif x != 1:
+                                    while ( f.readImage() == False and x == 0):
+                                        x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
+                                        t.sleep(1)
+                                        pass
+                                    if x != 1:
+                                        f.convertImage(0x01)
+                                        if ( f.compareCharacteristics() == 0):
+                                            print("FINGERS DO NOT MATCH")
+                                            return "Finger Did Not Match Third Time"
+                                        else:
+                                            print("THIRD FINGER TAKEN")
+                                            return "Finger Matched"
+                                    else:
+                                        print("TIME OUT")
+                                        return "Time Out"
+                                else:
+                                    print("TIME OUT")
+                                    return "Time Out"
+                            else:
+                                print("TIME OUT")
+                                return "Time Out"
+                        
+                    else:
+                        print("TIME OUT")
+                        return "Time Out"
                 else:
+                    print("TIME OUT")
                     return "Time Out"
             else:
-                return "Time Out"
+                print("TIME OUT")
+                return "Time Out"  
     else:
+        print("TIME OUT")
         return "Time Out"
 
 def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId):
@@ -231,8 +264,10 @@ def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId):
                                    selectedCompany, \
                                    employeeId, \
                                    database)
+        print("REGISTED SUCCESSFULLY")
         return "1"
     else:
+        print("NOT REGISTED SUCCESSFULLY")
         return receivedData[0]
         
 def getAllInfo():
