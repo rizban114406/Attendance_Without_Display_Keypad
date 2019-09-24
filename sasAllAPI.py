@@ -53,12 +53,12 @@ class sasAllAPI:
                 receivedData.append(output['data']['uniqueid'])
                 receivedData.append(output['data']['firstname'])
                 receivedData.append(output['data']['fingernumber'])
-                return receivedData
+                return ("Success",receivedData)
             else:
-                return "No"
+                return ("No","")
         except Exception as e:
             fileObject.updateExceptionMessage("sasAllAPI{getFingerId}",str(e))
-            return "Server Error"
+            return ("Server Error","")
 
     def sendEventData(self,mainData):
         try:
