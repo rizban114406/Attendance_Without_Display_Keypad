@@ -80,7 +80,7 @@ class sasAllAPI:
     def getTime(self):
         try:
             mainURL = self.mainURL + "get_time"
-            r = requests.post(mainURL,timeout = 5)
+            r = requests.post(mainURL,timeout = 4)
             print("Data Received {}".format(r.content))
             output = json.loads(r.content)
             if (output['status'] == 'success'):

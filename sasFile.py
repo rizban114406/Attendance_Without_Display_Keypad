@@ -63,4 +63,20 @@ class sasFile:
         file = open('heartBitUrl.txt', 'w+')
         file.write(url)
         file.close()
+    
+    def readStartTime(self):
+        try:           
+            file = open('startTime.txt','r')
+            startTime = file.readline()
+            file.close()
+        except Exception as e:
+            self.updateStartTime("")
+            startTime = None
+            self.updateExceptionMessage("sasFile{readStartTime}: ",str(e))
+        return startTime
+    
+    def updateStartTime(self,startTime):
+        file = open('startTime.txt', 'w+')
+        file.write(startTime)
+        file.close()
         

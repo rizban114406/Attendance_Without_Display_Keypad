@@ -268,12 +268,13 @@ class sasDatabase:
 #        curs.execute("DROP TABLE IF EXISTS eventListTable")
 #        self.databaseCommit(database)
 #        t.sleep(0.5)
-        curs.execute("CREATE TABLE eventListTable(id INT NOT NULL AUTO_INCREMENT,\
+        curs.execute("CREATE TABLE eventListTable(id BIGINT NOT NULL AUTO_INCREMENT,\
                                                  uniqueId INT,\
                                                  fingerOrCard INT,\
                                                  eventDateTime datetime,\
                                                  eventType varchar(1),\
                                                  companyId INT, \
+                                                 startTime dateTime, \
                                                  PRIMARY KEY(id))")
         self.databaseCommit(database)
 
@@ -287,11 +288,20 @@ class sasDatabase:
         curs.execute("Delete FROM eventListTable WHERE id = %s",(Id))
         self.databaseCommit(database)
 
-    def getAllEventData(self,database):
+    def getAllEventData(self,startTime,database):
         curs = database.cursor()
-        curs.execute("SELECT * From eventListTable Limit 1000")
-        self.databaseCommit(database)
-        return curs
+        curs.execute("SELECT * From eventListTable WHERE startTime = %s Limit 1000",(startTime))
+        if curs.rowcount > 0:
+            data = curs.fetchall()
+            return data
+        return []
+    
+    def checkEventDataStartTime(self,startTime,database):
+        curs = database.cursor()
+        curs.execute("SELECT * From eventListTable WHERE startTime = %s",(startTime))
+        if curs.rowcount == 0:
+            return 1
+        return 0
 
     def insertEventTime(self,\
                         uniqueId,\
@@ -299,18 +309,21 @@ class sasDatabase:
                         EventDateTime,\
                         EventType,\
                         companyId,\
+                        startTime,\
                         database):
         curs = database.cursor()
         curs.execute("INSERT INTO eventListTable(uniqueId,\
                                                  fingerOrCard,\
                                                  EventDateTime,\
                                                  EventType,\
-                                                 companyID) VALUES (%s,%s,%s,%s,%s)",\
+                                                 companyID,\
+                                                 startTime) VALUES (%s,%s,%s,%s,%s,%s)",\
                                                 (int(uniqueId),\
                                                  int(fingerOrCard),\
                                                  EventDateTime,\
                                                  EventType,\
-                                                 int(companyId)))
+                                                 int(companyId),\
+                                                 startTime))
         self.databaseCommit(database)
     ######################### All Functions Regarding Event Information Table ####################
 
@@ -634,4 +647,84 @@ class sasDatabase:
             fileObject.updateExceptionMessage("sasDatabase{updateDeviceInfoTable}",str(e))
         
     ####################### All Functions Regarding Device Info Table ###################
+    def createTableTimeConfig(self,database):
+        curs = database.cursor()
+        try:      
+            curs.execute("DROP TABLE timeConfig")
+            self.databaseCommit(database)
+            t.sleep(1)
+        except Exception:
+            print("Does not Exists")
+        curs.execute("CREATE TABLE timeConfig(startTime datetime,\
+                                              restartTime datetime,\
+                                              duration text)")
+        self.databaseCommit(database)
+    
+    def insertIntoTimeConfig(self, startTime, database):
+        curs = database.cursor()
+        curs.execute("IF NOT EXISTS ( SELECT * FROM timeConfig WHERE startTime = %s)\
+                      BEGIN \
+                      INSERT INTO timeConfig(startTime,duration) VALUES (%s,"")",\
+                                               (startTime,startTime))
+        self.databaseCommit(database)
+        
+    def updateRestartTimeConfig(self, startTime, restartTime, database):
+        curs = database.cursor()
+        curs.execute ("UPDATE timeConfig SET restartTime = %s \
+                       WHERE startTime = %s",(startTime, restartTime))
+        self.databaseCommit(database)
+    
+    def updateDurationTimeConfig(self, startTime, duration, database):
+        curs = database.cursor()
+        curs.execute ("UPDATE timeConfig SET duration = %s \
+                       WHERE startTime = %s",(str(duration), startTime))
+        self.databaseCommit(database)
+    
+    def getRowWithNoDurationTimeConfig(self,database):
+        curs = database.cursor()
+        curs.execute ("SELECT startTime, restartTime FROM timeConfig WHERE duration = """)
+        if (curs.rowcount != 0):
+            desiredDetails = curs.fetchall()
+            return desiredDetails
+        else:
+            return '0'
+    
+    def getDataTimeConfig(self,database):
+        curs = database.cursor()
+        curs.execute ("SELECT * FROM timeConfig WHERE duration != """)
+        if (curs.rowcount != 0):
+            desiredDetails = curs.fetchall()
+            return desiredDetails
+        else:
+            return '0'
+    
+    def deleteFromTimeConfig(self,startTime,database): # Delete From Employee Infromation Table After Deleting Employee
+        curs = database.cursor()
+        curs.execute("Delete FROM timeConfig \
+                      WHERE startTime = %s",(startTime))
+        self.databaseCommit(database)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
+    
     

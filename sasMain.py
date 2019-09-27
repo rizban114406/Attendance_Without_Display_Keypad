@@ -32,6 +32,7 @@ except Exception as e:
     
 desiredTask = '1'
 lock = threading.Lock()
+startTime = fileObject.readStartTime()
 
 from sasAllAPI import sasAllAPI
 apiObject = sasAllAPI()
@@ -131,12 +132,13 @@ def syncWithOtherDevices(f):
                     if prevId > 0:
                         f.deleteTemplate(prevId)
                         dbObject.deleteFromEmployeeInfoTable(data['uniqueid'],data['fingernumber'],database)
-                        createNewTemplateToSync(f,data)
-                        t.sleep(1)
+                    createNewTemplateToSync(f,data)
+                    t.sleep(1)
             if len(receivedDataSync['delete_request_enrollment']) > 0:
                 prevId = dbObject.checkEmployeeInfoTableToDelete(data['uniqueid'],data['fingernumber'],database)
                 f.deleteTemplate(prevId)
                 dbObject.deleteFromEmployeeInfoTable(data['uniqueid'],data['fingernumber'],database)
+                t.sleep(1)
             else:
                 print("Device Is Already Synced With The Server")
     except Exception as e:
@@ -301,7 +303,8 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag):
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
                                      attendanceFlag,\
-                                     '0',
+                                     '0',\
+                                     startTime,\
                                      database)
             GPIO.output(21, 0)
         else :
@@ -311,6 +314,7 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag):
                                      currentDateTime,\
                                      attendanceFlag,\
                                      employeeDetails[3],\
+                                     startTime,\
                                      database)
             GPIO.output(20, 0)
     elif attendanceFlag == '1':
@@ -321,6 +325,7 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag):
                                      currentDateTime, \
                                      attendanceFlag, \
                                      employeeDetails[3], \
+                                     startTime,\
                                      database)
             GPIO.output(20, 1)
             GPIO.output(20, 0)
@@ -430,18 +435,8 @@ def functionKillProgram():
             t.sleep(1)
     os.system('sudo pkill -f sasMain.py')
     os.system('sudo pkill -f sasSyncDevice.py')
-
-def setDeviceTime():
-    try:
-        nowTime = apiObject.getTime()
-        if nowTime != "Not Successfull":
-            command = "sudo date -s "+ '"'+nowTime+'"'
-            os.system(command)
-    except Exception as e:
-        fileObject.updateExceptionMessage("sasMain{setDEviceTime}",str(e))
         
 if __name__ == '__main__':
-    setDeviceTime()
     if deviceId != 0:
         f = configureFingerPrint()
         fingerPrint = threading.Thread(target = workWithFingerPrintSensor,(f,))
