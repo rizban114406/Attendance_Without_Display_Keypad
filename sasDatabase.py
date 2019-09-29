@@ -290,7 +290,7 @@ class sasDatabase:
 
     def getAllEventData(self,startTime,database):
         curs = database.cursor()
-        curs.execute("SELECT * From eventListTable WHERE startTime = %s Limit 1000",(startTime))
+        curs.execute("SELECT * From eventListTable WHERE startTime = %s",(startTime))
         if curs.rowcount > 0:
             data = curs.fetchall()
             return data

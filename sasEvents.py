@@ -58,9 +58,7 @@ if __name__ == '__main__':
                     if message == "Success":
                         for Id in id_count :
                             dbObject.deleteFromEventListTable(Id,database)
-                        remainingFlag = dbObject.checkEventDataStartTime(intervals[0],database)
-                        if remainingFlag == 1:
-                            dbObject.deleteFromTimeConfig(intervals[0],database)
+                        dbObject.deleteFromTimeConfig(intervals[0],database)
                     elif message == "Not Successfull":
                         print("Something Went Wrong")
                     else:
