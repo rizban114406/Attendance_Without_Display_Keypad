@@ -1,12 +1,9 @@
-import MySQLdb
+import sqlite3
 from sasFile import sasFile
 import time as t
 fileObject = sasFile()
 class sasDatabase:
-    address = "localhost"
-    user = "attendanceUser"
-    password = "password"
-    database = "AttendanceSystem"
+    databaseName = "attendanceDB"
 
     def databaseCommit(self,database):
         database.commit()
@@ -15,7 +12,7 @@ class sasDatabase:
         database.close()
 
     def connectDataBase(self):
-        database = MySQLdb.connect(self.address, self.user, self.password, self.database,charset='utf8')
+        database = sqlite3.connect(self.databaseName)
         return database
 
     ####################### All Functions Regarding Employee Information Table ###################
@@ -30,15 +27,14 @@ class sasDatabase:
 #        curs.execute("DROP TABLE IF EXISTS employeeInfoTable")
 #        self.databaseCommit(database)
 #        t.sleep(0.5)
-        curs.execute("CREATE TABLE employeeInfoTable(id INT NOT NULL AUTO_INCREMENT,\
-                                                     employeeId varchar(50),\
-                                                     uniqueId INT,\
-                                                     firstName varchar(200),\
-                                                     fingerId INT, \
+        curs.execute("CREATE TABLE employeeInfoTable(id           INTEGER PRIMARY KEY AUTOINCREMENT,\
+                                                     employeeId   TEXT,\
+                                                     uniqueId     INTEGER,\
+                                                     firstName    TEXT,\
+                                                     fingerId     INTEGER, \
                                                      fingerMatrix TEXT, \
-                                                     companyId INT, \
-                                                     employee varchar(50),\
-                                                     PRIMARY KEY(id))")
+                                                     companyId    INTEGER, \
+                                                     employee     TEXT)")
         self.databaseCommit(database)
 
     def deleteFromEmployeeInfoTable(self,uniqueId,fingerId,database): # Delete From Employee Infromation Table After Deleting Employee
@@ -166,96 +162,96 @@ class sasDatabase:
             return '0'
     ####################### All Functions Regarding Employee Information Table ###################
 
-    ############################# All Functions Regarding Temporary Table ########################
-    def createTableTempTableToSync(self,database): # Create A Temporary Table To Sync With The Server
-        curs = database.cursor()
-        try:      
-            curs.execute("Drop Table tempTableToSync")
-            self.databaseCommit(database)
-            t.sleep(1)
-        except Exception:
-            print("Does not Exists")
-#        curs.execute("DROP TABLE IF EXISTS tempTableToSync")
+#    ############################# All Functions Regarding Temporary Table ########################
+#    def createTableTempTableToSync(self,database): # Create A Temporary Table To Sync With The Server
+#        curs = database.cursor()
+#        try:      
+#            curs.execute("Drop Table tempTableToSync")
+#            self.databaseCommit(database)
+#            t.sleep(1)
+#        except Exception:
+#            print("Does not Exists")
+##        curs.execute("DROP TABLE IF EXISTS tempTableToSync")
+##        self.databaseCommit(database)
+##        t.sleep(0.5)
+#        curs.execute("CREATE TABLE tempTableToSync(id INT NOT NULL AUTO_INCREMENT,\
+#                                                   employeeId varchar(50),\
+#                                                   uniqueId INT,\
+#                                                   firstName varchar(200),\
+#                                                   fingerId INT, \
+#                                                   fingerMatrix TEXT, \
+#                                                   desiredTask varchar(2), \
+#                                                   companyId INT, \
+#                                                   PRIMARY KEY(id))")
 #        self.databaseCommit(database)
-#        t.sleep(0.5)
-        curs.execute("CREATE TABLE tempTableToSync(id INT NOT NULL AUTO_INCREMENT,\
-                                                   employeeId varchar(50),\
-                                                   uniqueId INT,\
-                                                   firstName varchar(200),\
-                                                   fingerId INT, \
-                                                   fingerMatrix TEXT, \
-                                                   desiredTask varchar(2), \
-                                                   companyId INT, \
-                                                   PRIMARY KEY(id))")
-        self.databaseCommit(database)
-
-    def truncateTempTableToSync(self,database): # Delete From Employee Infromation Table After Deleting Employee
-        curs = database.cursor()
-        curs.execute("truncate tempTableToSync")
-        self.databaseCommit(database)
-
-    def insertToTempTableToSync(self,\
-                                employeeId,\
-                                uniqueId,\
-                                firstName,\
-                                fingerId,\
-                                fingerMatrix,\
-                                desiredTask,\
-                                companyId, \
-                                database): # Insert Into Temporary Table To Sync With The Server
-        curs = database.cursor()
-        if (firstName is None):
-            firstName = ""
-        try:
-            curs.execute("INSERT INTO tempTableToSync(employeeId,\
-                                                      uniqueId,\
-                                                      firstName,\
-                                                      fingerId,\
-                                                      fingerMatrix,\
-                                                      desiredTask,\
-                                                      companyId) VALUES (%s,%s,%s,%s,%s,%s,%s)",\
-                                                      (str(employeeId),\
-                                                      int(uniqueId),\
-                                                      str(firstName),\
-                                                      int(fingerId),\
-                                                      str(fingerMatrix),\
-                                                      str(desiredTask),\
-                                                      int(companyId)))
-            self.databaseCommit(database)
-        except Exception as e:
-            fileObject.updateExceptionMessage("sasDatabase{insertToTempTableToSync}",str(e))
-
-    def deleteFromTempTableToSync(self,uniqueId,fingerId,database): # Delete From Temporary Table After Synced
-        curs = database.cursor()
-        curs.execute("Delete FROM tempTableToSync \
-                      WHERE uniqueId = %s and fingerId = %s",(int(uniqueId),int(fingerId)))
-        self.databaseCommit(database)
-
-    def getInfoFromTempTableToDelete(self,database): # Get Data From Temporary Table To Sync With The Server
-        curs = database.cursor()
-        try:     
-            curs.execute("SELECT uniqueId,fingerId From tempTableToSync Where desiredTask = '3'")
-            if (curs.rowcount != 0):
-                return curs
-            else:
-                return "Synced"
-        except Exception as e:
-            fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToDelete}",str(e))
-            return "Synced"
-
-    def getInfoFromTempTableToEnrollOrUpdate(self,database): # Get Data From Temporary Table To Sync With The Server
-        curs = database.cursor()
-        try:        
-            curs.execute("SELECT * From tempTableToSync Where desiredTask = '1' Limit 200")
-            if (curs.rowcount != 0):
-                return curs
-            else:
-                return "Synced"
-        except Exception as e:
-            fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToEnrollOrUpdate}",str(e))
-            return "Synced"
-    ############################# All Functions Regarding Temporary Table ########################
-
+#
+#    def truncateTempTableToSync(self,database): # Delete From Employee Infromation Table After Deleting Employee
+#        curs = database.cursor()
+#        curs.execute("truncate tempTableToSync")
+#        self.databaseCommit(database)
+#
+#    def insertToTempTableToSync(self,\
+#                                employeeId,\
+#                                uniqueId,\
+#                                firstName,\
+#                                fingerId,\
+#                                fingerMatrix,\
+#                                desiredTask,\
+#                                companyId, \
+#                                database): # Insert Into Temporary Table To Sync With The Server
+#        curs = database.cursor()
+#        if (firstName is None):
+#            firstName = ""
+#        try:
+#            curs.execute("INSERT INTO tempTableToSync(employeeId,\
+#                                                      uniqueId,\
+#                                                      firstName,\
+#                                                      fingerId,\
+#                                                      fingerMatrix,\
+#                                                      desiredTask,\
+#                                                      companyId) VALUES (%s,%s,%s,%s,%s,%s,%s)",\
+#                                                      (str(employeeId),\
+#                                                      int(uniqueId),\
+#                                                      str(firstName),\
+#                                                      int(fingerId),\
+#                                                      str(fingerMatrix),\
+#                                                      str(desiredTask),\
+#                                                      int(companyId)))
+#            self.databaseCommit(database)
+#        except Exception as e:
+#            fileObject.updateExceptionMessage("sasDatabase{insertToTempTableToSync}",str(e))
+#
+#    def deleteFromTempTableToSync(self,uniqueId,fingerId,database): # Delete From Temporary Table After Synced
+#        curs = database.cursor()
+#        curs.execute("Delete FROM tempTableToSync \
+#                      WHERE uniqueId = %s and fingerId = %s",(int(uniqueId),int(fingerId)))
+#        self.databaseCommit(database)
+#
+#    def getInfoFromTempTableToDelete(self,database): # Get Data From Temporary Table To Sync With The Server
+#        curs = database.cursor()
+#        try:     
+#            curs.execute("SELECT uniqueId,fingerId From tempTableToSync Where desiredTask = '3'")
+#            if (curs.rowcount != 0):
+#                return curs
+#            else:
+#                return "Synced"
+#        except Exception as e:
+#            fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToDelete}",str(e))
+#            return "Synced"
+#
+#    def getInfoFromTempTableToEnrollOrUpdate(self,database): # Get Data From Temporary Table To Sync With The Server
+#        curs = database.cursor()
+#        try:        
+#            curs.execute("SELECT * From tempTableToSync Where desiredTask = '1' Limit 200")
+#            if (curs.rowcount != 0):
+#                return curs
+#            else:
+#                return "Synced"
+#        except Exception as e:
+#            fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToEnrollOrUpdate}",str(e))
+#            return "Synced"
+#    ############################# All Functions Regarding Temporary Table ########################
+#
     ######################### All Functions Regarding Event Information Table ####################
     def createTableEventListTable(self,database):
         curs = database.cursor()
@@ -268,14 +264,13 @@ class sasDatabase:
 #        curs.execute("DROP TABLE IF EXISTS eventListTable")
 #        self.databaseCommit(database)
 #        t.sleep(0.5)
-        curs.execute("CREATE TABLE eventListTable(id BIGINT NOT NULL AUTO_INCREMENT,\
+        curs.execute("CREATE TABLE eventListTable(id BIGINT PRIMARY KEY AUTOINCREMENT,\
                                                  uniqueId INT,\
                                                  fingerOrCard INT,\
                                                  eventDateTime datetime,\
                                                  eventType varchar(1),\
                                                  companyId INT, \
-                                                 startTime dateTime, \
-                                                 PRIMARY KEY(id))")
+                                                 startTime dateTime)")
         self.databaseCommit(database)
 
     def truncateEventListTable(self,database): # Delete From Employee Infromation Table After Deleting Employee
@@ -325,7 +320,7 @@ class sasDatabase:
                                                  int(companyId),\
                                                  startTime))
         self.databaseCommit(database)
-    ######################### All Functions Regarding Event Information Table ####################
+#    ######################### All Functions Regarding Event Information Table ####################
 
     ####################### All Functions Regarding Employee Card Info ###################
     def createTableEmployeeCardInfo(self,database): # Create Employee Card Info Table
@@ -339,13 +334,12 @@ class sasDatabase:
 #        curs.execute("DROP TABLE IF EXISTS employeeCardInfo")
 #        self.databaseCommit(database)
 #        t.sleep(0.5)
-        curs.execute("CREATE TABLE employeeCardInfo(id INT NOT NULL AUTO_INCREMENT,\
+        curs.execute("CREATE TABLE employeeCardInfo(id INT PRIMARY KEY AUTOINCREMENT,\
                                                    employeeId varchar(50),\
                                                    uniqueId INT,\
                                                    firstName varchar(200),\
                                                    cardNumber INT, \
-                                                   companyId INT, \
-                                                   PRIMARY KEY(id))")
+                                                   companyId INT)")
         self.databaseCommit(database)
 
     def deleteFromEmployeeCardInfoTable(self,uniqueId,cardNumber,database): # Delete From Employee Card Info Table After Deleting Employee
@@ -446,10 +440,9 @@ class sasDatabase:
 #        curs.execute("DROP TABLE IF EXISTS companyListTable")
 #        self.databaseCommit(database)
 #        t.sleep(.5)
-        curs.execute("CREATE TABLE companyListTable(id INT NOT NULL AUTO_INCREMENT,\
+        curs.execute("CREATE TABLE companyListTable(id INT PRIMARY KEY AUTOINCREMENT,\
                                                   companyId INT,\
-                                                  shortName text,\
-                                                  PRIMARY KEY(id))")
+                                                  shortName text)")
         self.databaseCommit(database)
 
     def getAllCompanyList(self,database):
@@ -489,11 +482,10 @@ class sasDatabase:
 #        curs.execute("DROP TABLE IF EXISTS configurationTable")
 #        self.databaseCommit(database)
 #        t.sleep(.5)
-        curs.execute("CREATE TABLE configurationTable(id INT NOT NULL AUTO_INCREMENT,\
+        curs.execute("CREATE TABLE configurationTable(id INT PRIMARY KEY AUTOINCREMENT,\
                                                   deviceOSVersion double,\
                                                   baseUrl text,\
-                                                  subUrl text,\
-                                                  PRIMARY KEY(id))")
+                                                  subUrl text)")
         self.databaseCommit(database)
         
     def getAllConfigurationDetails(self,database):
@@ -560,14 +552,13 @@ class sasDatabase:
 #        curs.execute("DROP TABLE IF EXISTS deviceInfoTable")
 #        self.databaseCommit(database)
 #        t.sleep(.5)
-        curs.execute("CREATE TABLE deviceInfoTable(id INT NOT NULL AUTO_INCREMENT,\
+        curs.execute("CREATE TABLE deviceInfoTable(id INT PRIMARY KEY AUTOINCREMENT,\
                                                   deviceId int,\
                                                   hardwareId text,\
                                                   companyId varchar(3),\
                                                   address text,\
                                                   subAddress text,\
-                                                  ipAddress text,\
-                                                  PRIMARY KEY(id))")
+                                                  ipAddress text)")
         self.databaseCommit(database)
 
     def getDeviceId(self,database):
