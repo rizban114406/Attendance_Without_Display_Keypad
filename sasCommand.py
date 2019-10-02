@@ -13,6 +13,9 @@ root.addHandler(ch)
 from sasFile import sasFile
 fileObject = sasFile()
 
+from sasAllAPI import sasAllAPI
+apiObject = sasAllAPI()
+
 def getHardwareId():
     # Extract serial from cpuinfo file
     cpuserial = ""
@@ -33,6 +36,46 @@ pusher = pysher.Pusher('de47d29a0309c4e2c87e')
 
 def my_func(*args, **kwargs):
     output = json.loads(args[0])
+    hardwareId = "asdasdas"
+    task = fileObject.readDesiredTask()
+    requestId = fileObject.readRequestId()
+    if (output['command'] == "ONLINE_FLAG" and \
+        output['hardware_id'] == hardwareId):
+        if task == '1':
+            apiObject.confirmDeviceStatus(hardwareId)
+        else:
+            print("DEVICE IS BUSY")
+        
+    elif (task == "1" and output['hardware_id'] == hardwareId \
+                      and output['command'] == "ENROLL_USER" \
+                      and requestId == "0"):
+        fileObject.updateDesiredTask('5')
+        fileObject.updateRequestId(output['request_id'])
+                    
+    elif (task == "5" and output['hardware_id'] == hardwareId \
+                      and output['command'] == "TAKE_SECOND_FINGER"
+                      and output['request_id'] == requestId):
+        fileObject.updateDesiredTask('6')
+        
+    elif (task == "6" and output['hardware_id'] == hardwareId \
+                      and output['command'] == "TAKE_THIRD_FINGER"
+                      and output['request_id'] == requestId):
+        fileObject.updateDesiredTask('7')
+        
+    elif (task != "1" and output['hardware_id'] == hardwareId \
+                      and output['command'] == "CANCEL_ENROLLMENT"
+                      and output['request_id'] == requestId):
+        fileObject.updateDesiredTask('8')
+        
+    elif (task != "1" and output['hardware_id'] == hardwareId \
+                      and output['command'] == "TIME_OUT"
+                      and output['request_id'] == requestId):
+        fileObject.updateDesiredTask('8')
+        
+    
+
+            
+    print(output)
     print(output['hardware_id'])
     print(output['user_id'])
     

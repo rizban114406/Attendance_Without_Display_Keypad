@@ -80,3 +80,19 @@ class sasFile:
         file.write(startTime)
         file.close()
         
+    def readRequestId(self):
+        try:           
+            file = open('requestId.txt','r')
+            requestId = file.readline()
+            file.close()
+        except Exception as e:
+            self.updateRequestId("0")
+            requestId = "0"
+            self.updateExceptionMessage("sasFile{readStartTime}: ",str(e))
+        return requestId
+    
+    def updateRequestId(self,requestId):
+        file = open('requestId.txt', 'w+')
+        file.write(str(requestId))
+        file.close()
+        

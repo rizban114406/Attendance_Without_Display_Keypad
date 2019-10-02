@@ -234,6 +234,23 @@ class sasAllAPI:
         except Exception as e:
             fileObject.updateExceptionMessage("sasAllAPI{getConfigDetails}",str(e))
             return "Server Error"
+        
+    def confirmDeviceStatus(self,hardwareId):
+        try:
+            mainURL = self.mainURL + "change_device_status"
+            payload = {"hardwareId" : hardwareId }
+            print("Data To Be Sent: {}".format(payload))
+            r = requests.post(mainURL, data = payload,timeout = 3)
+            output = json.loads(r.content)
+            print("Data Received {}".format(r.content))
+            if (output['status'] == "success"):
+                return '1'
+            else:
+                return '0'
+        
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
+            return "Server Error"
 
         
                 
