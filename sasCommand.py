@@ -3,12 +3,20 @@ import json
 import sys
 import time
 import pysher
+import pushar
 import logging
 
 root = logging.getLogger()
 root.setLevel(logging.INFO)
 ch = logging.StreamHandler(sys.stdout)
 root.addHandler(ch)
+
+appId = '860616'
+key = 'de47d29a0309c4e2c87e'
+secret = '87b85c977153726607e7'
+
+pusherSend = pusher.Pusher(appId, key, secret)
+pusherReceive = pysher.Pusher(key)
 
 from sasFile import sasFile
 fileObject = sasFile()
@@ -32,7 +40,6 @@ def getHardwareId():
     return cpuserial
 
 hardwareId = getHardwareId()
-pusher = pysher.Pusher('de47d29a0309c4e2c87e')
 
 def my_func(*args, **kwargs):
     output = json.loads(args[0])
@@ -72,7 +79,8 @@ def my_func(*args, **kwargs):
                       and output['request_id'] == requestId):
         fileObject.updateDesiredTask('8')
         
-    
+    elif (task != "1" and output['hardware_id'] == hardwareId):
+        
 
             
     print(output)
@@ -81,11 +89,11 @@ def my_func(*args, **kwargs):
     
 
 def connect_handler(data):
-    channel = pusher.subscribe('enroll-channel')
+    channel = pusherReceive.subscribe('enroll-channel')
     channel.bind('enroll-event', my_func)
 
-pusher.connection.bind('pusher:connection_established', connect_handler)
-pusher.connect()
+pusherReceive.connection.bind('pusher:connection_established', connect_handler)
+pusherReceive.connect()
 
 while True:
     time.sleep(1)
