@@ -11,11 +11,11 @@ try:
     dbObject.createTableEventListTable(database)
     dbObject.createTableEmployeeCardInfo(database)
     dbObject.createTableCompanyListTable(database)
-    dbObject.createTableTempTableToSync(database)
+#    dbObject.createTableTempTableToSync(database)
     dbObject.createTableDeviceInfoTable(database)
     dbObject.createTableConfigInfoTable(database)
-    dbObject.insertIntoConfigurationTable("1","103.108.147.49","/SAS/public/api/",database)
-    url = "http://" + "103.108.147.49" + "/SAS/public/api/" + "server_heartbit"
+    dbObject.insertIntoConfigurationTable("1","103.108.147.49","/SAS-test/public/api/",database)
+    url = "http://" + "103.108.147.49" + "/SAS-test/public/api/" + "server_heartbit"
     fileObject.updateHearBitURL(url)
     fileObject.updateConfigUpdateStatus('0')
     dbObject.databaseClose(database)
@@ -25,11 +25,11 @@ except Exception as e:
     dbObject.createTableEventListTable(database)
     dbObject.createTableEmployeeCardInfo(database)
     dbObject.createTableCompanyListTable(database)
-    dbObject.createTableTempTableToSync(database)
+#    dbObject.createTableTempTableToSync(database)
     dbObject.createTableDeviceInfoTable(database)
     dbObject.createTableConfigInfoTable(database)
-    dbObject.insertIntoConfigurationTable("1","103.108.147.49","/SAS/public/api/",database)
-    url = "http://" + "103.108.147.49" + "/SAS/public/api/" + "server_heartbit"
+    dbObject.insertIntoConfigurationTable("1","103.108.147.49","/SAS-test/public/api/",database)
+    url = "http://" + "103.108.147.49" + "/SAS-test/public/api/" + "server_heartbit"
     fileObject.updateHearBitURL(url)
     fileObject.updateConfigUpdateStatus('0')
     dbObject.databaseClose(database)

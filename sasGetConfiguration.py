@@ -148,8 +148,10 @@ def checkIPAddress(deviceId,ipAddress):
 if __name__ == '__main__':
     try:
         deviceId = dbObject.getDeviceId(database)
+        print(deviceId)
         hardwareId = getHardwareId()
         osVersion = dbObject.getOSVersion(database)
+        print(osVersion)
         ipAddress = getIpAddress()
         if deviceId == 0:
             deviceInfo = apiObject.createDevice(hardwareId,osVersion)

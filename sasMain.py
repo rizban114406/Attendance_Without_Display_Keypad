@@ -368,11 +368,11 @@ def workWithFingerPrintSensor(f):
     global desiredTask
     while True:
         try:
-            lock.acquire()
-            fileObject.updateDesiredTask('4')
-            syncWithOtherDevices(f)
-            fileObject.updateDesiredTask('1')
-            lock.release()
+#            lock.acquire()
+#            fileObject.updateDesiredTask('4')
+#            syncWithOtherDevices(f)
+#            fileObject.updateDesiredTask('1')
+#            lock.release()
             while True:  
                 while (f.readImage() == False):
                     desiredTask = fileObject.readDesiredTask()
@@ -437,9 +437,10 @@ def functionKillProgram():
     os.system('sudo pkill -f sasSyncDevice.py')
         
 if __name__ == '__main__':
+    deviceId = 1
     if deviceId != 0:
         f = configureFingerPrint()
-        fingerPrint = threading.Thread(target = workWithFingerPrintSensor,(f,))
+        fingerPrint = threading.Thread(target = workWithFingerPrintSensor,args = (f,))
         rfSensor = threading.Thread(target = workWithRFSensor)
         checkToKill = threading.Thread(target = functionKillProgram)
         
