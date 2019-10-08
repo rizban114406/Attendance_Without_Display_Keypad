@@ -21,14 +21,19 @@ from sasFile import sasFile
 fileObject = sasFile()
 
 from sasDatabase import sasDatabase
-dbObject = sasDatabase()
-try:
+
+def getDeviceId():
     dbObject = sasDatabase()
-    database = dbObject.connectDataBase()
-    deviceId = dbObject.getDeviceId(database)
-except Exception as e:
-    fileObject.updateExceptionMessage("sasMain{Connect To Database}: ",str(e))
-    os.system('sudo pkill -f sasMain.py')
+    try:
+        dbObject = sasDatabase()
+        database = dbObject.connectDataBase()
+        deviceId = dbObject.getDeviceId(database)
+        dbObject.databaseClose(database)
+    except Exception as e:
+        fileObject.updateExceptionMessage("sasMain{Connect To Database}: ",str(e))
+        dbObject.databaseClose(database)
+        os.system('sudo pkill -f sasMain.py')
+    return deviceId
     
 desiredTask = '1'
 lock = threading.Lock()
@@ -59,13 +64,15 @@ def checkCurrentDateTime():
     currentDateTime = nowTime.strftime('%Y-%m-%d %H:%M:%S')
     return (currentDateTime,currentTime)
 
-def createNewTemplateToSync(f,employeeInfo):
+def createNewTemplateToSync(f,employeeInfo,dbObject,database):
     x = str(employeeInfo['matrix']).split('-')
     characteristics = []
     for i in range(0,len(x)-1):
         characteristics.append(int(x[i]))
+    lock.acquire()
     f.uploadCharacteristics(0x01,characteristics)
     f.storeTemplate(int(employeeInfo[4]),0x01)
+    lock.release()
     import re
     sp = re.split(' |-|',str(employeeInfo['employeeid']))
     if(len(sp) == 2):
@@ -84,10 +91,12 @@ def createNewTemplateToSync(f,employeeInfo):
         
 
 def updateListOfUsedTemplates(f):
+    lock.acquire()
     tableIndex1 = f.getTemplateIndex(0)
     tableIndex2 = f.getTemplateIndex(1)
     tableIndex3 = f.getTemplateIndex(2)
     tableIndex4 = f.getTemplateIndex(3)
+    lock.release()
     index = []
     for i in range(0, len(tableIndex1)):
         index.append(tableIndex1[i])
@@ -103,7 +112,7 @@ def updateListOfUsedTemplates(f):
             storedIndex = storedIndex + str(i) + '-'
     fileObject.updateStoredIndex(storedIndex)
     
-def checkEmployeeInfoTable(f):
+def checkEmployeeInfoTable(f,dbObject,database):
     try:    
         templatesStoredSensor = fileObject.readStoredIndex()
         templateStoredDatabase = dbObject.getEmployeeTemplateNumber(database)
@@ -111,15 +120,19 @@ def checkEmployeeInfoTable(f):
         dbObject.deleteFromEmployeeInfoTableToSync(notListedTemplateNumber,database)
         notListedTemplateNumber = list(set(templatesStoredSensor) - set(templateStoredDatabase))
         for deleteId in notListedTemplateNumber:
-            f.deleteTemplate(int(deleteId))
+            if deleteId != '':
+                lock.acquire()
+                f.deleteTemplate(int(deleteId))
+                lock.release()
     except Exception as e:
         fileObject.updateExceptionMessage("sasMain{checkEmployeeInfoTable}: ",str(e))
         
 def syncWithOtherDevices(f):
-    checkEmployeeInfoTable(f)
-    try:
+#    try:
+        dbObject = sasDatabase()
+        database = dbObject.connectDataBase()
+        checkEmployeeInfoTable(f,dbObject,database)
         receivedData = dbObject.getInfoFromEmployeeInfoTable(database)
-        #        print("Existig Data {}".format(receivedData))
         receivedDataSync = apiObject.getDataToSync(receivedData,deviceId)
         if(receivedDataSync == "Some Thing Is Wrong"):
             return "API Error"
@@ -130,22 +143,26 @@ def syncWithOtherDevices(f):
                 for data in receivedDataSync['data']:
                     prevId = dbObject.checkEmployeeInfoTableToDelete(data['uniqueid'],data['fingernumber'],database)
                     if prevId > 0:
+                        lock.acquire()
                         f.deleteTemplate(prevId)
+                        lock.release()
                         dbObject.deleteFromEmployeeInfoTable(data['uniqueid'],data['fingernumber'],database)
-                    createNewTemplateToSync(f,data)
+                    createNewTemplateToSync(f,data,dbObject,database)
                     t.sleep(1)
             if len(receivedDataSync['delete_request_enrollment']) > 0:
+                lock.acquire()
                 prevId = dbObject.checkEmployeeInfoTableToDelete(data['uniqueid'],data['fingernumber'],database)
                 f.deleteTemplate(prevId)
                 dbObject.deleteFromEmployeeInfoTable(data['uniqueid'],data['fingernumber'],database)
+                lock.release()
                 t.sleep(1)
             else:
                 print("Device Is Already Synced With The Server")
-    except Exception as e:
-        fileObject.updateExceptionMessage("sasMain{syncWithOtherDevices}: ",str(e))
-        fileObject.updateDesiredTask('1')
-        dbObject.databaseClose(database)
-        os.system('sudo pkill -f sasMain.py')
+#    except Exception as e:
+#        fileObject.updateExceptionMessage("sasMain{syncWithOtherDevices}: ",str(e))
+#        fileObject.updateDesiredTask('1')
+#        dbObject.databaseClose(database)
+#        os.system('sudo pkill -f sasMain.py')
         
 def calculateTimeDifference(currentDateTime,timeLimit):
     NowTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -249,7 +266,7 @@ def takeFingerprintToEnroll(f,currentDateTime):
         print("TIME OUT")
         return "Time Out"
 
-def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId):
+def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,database):
     characterMatrix = f.downloadCharacteristics()
     matrix = ""
     for i in characterMatrix:
@@ -275,7 +292,7 @@ def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId):
 def getAllInfo():
     return ("0","0","0")
 
-def enrollNewEmployee(f,deviceId):
+def enrollNewEmployee(f,deviceId,dbObject,database):
     currentDateTime,currentTime = checkCurrentDateTime()
     uniqueId,selectedCompany,employeeId = getAllInfo()
     try:
@@ -283,7 +300,7 @@ def enrollNewEmployee(f,deviceId):
         if maintainanceStatus == '1':
             fingerInput = takeFingerprintToEnroll(f,currentDateTime)
             if fingerInput == "Finger Matched" :
-                status = createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId)
+                status = createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,database)
                 if status == "1":
                     print("Registered Successfuly")
                     #GPIO INDICATOR
@@ -293,7 +310,7 @@ def enrollNewEmployee(f,deviceId):
     except Exception as e:
          fileObject.updateExceptionMessage("sasMain{enrollNewEmployee}: ",str(e))
 
-def createEventLogg(employeeCardorFingerNumber,attendanceFlag):
+def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):
     currentDateTime,currentTime = checkCurrentDateTime()
     if attendanceFlag == '2':
         employeeDetails = dbObject.getEmployeeDetailsFromCard(employeeCardorFingerNumber,database)
@@ -333,7 +350,7 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag):
         else:
             return 0
        
-def matchFingerPrint(f):
+def matchFingerPrint(f,dbObject,database):
     try:
         f.convertImage(0x01)
         result = f.searchTemplate()
@@ -343,7 +360,7 @@ def matchFingerPrint(f):
             GPIO.output(21, 1)
             GPIO.output(21, 0)
         else:
-            fingerFlag = createEventLogg(positionNumber,'1')
+            fingerFlag = createEventLogg(positionNumber,'1',dbObject,database)
             if fingerFlag == 0:
                 f.deleteTemplate(positionNumber)
     except Exception as e:
@@ -368,11 +385,8 @@ def workWithFingerPrintSensor(f):
     global desiredTask
     while True:
         try:
-#            lock.acquire()
-#            fileObject.updateDesiredTask('4')
-#            syncWithOtherDevices(f)
-#            fileObject.updateDesiredTask('1')
-#            lock.release()
+            dbObject = sasDatabase()
+            database = dbObject.connectDataBase()
             while True:  
                 while (f.readImage() == False):
                     desiredTask = fileObject.readDesiredTask()
@@ -386,10 +400,10 @@ def workWithFingerPrintSensor(f):
                     desiredTask = '6'
     #            print("Modified Task is {}".format(desiredTask))    
                 if desiredTask == '6':
-                    matchFingerPrint(f)
+                    matchFingerPrint(f,dbObject,database)
                     fileObject.updateDesiredTask('1')                  
                 elif desiredTask == '2':
-                    enrollNewEmployee(f,deviceId)
+                    enrollNewEmployee(f,deviceId,dbObject,database)
                     fileObject.updateDesiredTask('1')
                 lock.release()
                 t.sleep(1)
@@ -437,18 +451,22 @@ def functionKillProgram():
     os.system('sudo pkill -f sasSyncDevice.py')
         
 if __name__ == '__main__':
-    deviceId = 1
+    deviceId = getDeviceId()
     if deviceId != 0:
         f = configureFingerPrint()
         fingerPrint = threading.Thread(target = workWithFingerPrintSensor,args = (f,))
+        syncFingerPrint = threading.Thread(target = syncWithOtherDevices,args = (f,))
         rfSensor = threading.Thread(target = workWithRFSensor)
         checkToKill = threading.Thread(target = functionKillProgram)
         
         fingerPrint.start()
+        syncFingerPrint.start()
         rfSensor.start()
         checkToKill.start()
         
         fingerPrint.join()
+        syncFingerPrint.join()
         rfSensor.join()
         checkToKill.join()
+        
     
