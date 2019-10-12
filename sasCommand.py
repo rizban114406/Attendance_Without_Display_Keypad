@@ -1,9 +1,9 @@
 import time as t
+import pusher as push
 import json
 import sys
 import time
 import pysher
-import pushar
 import logging
 
 root = logging.getLogger()
@@ -15,7 +15,7 @@ appId = '860616'
 key = 'de47d29a0309c4e2c87e'
 secret = '87b85c977153726607e7'
 
-pusherSend = pusher.Pusher(appId, key, secret)
+pusherSend = push.Pusher(appId, key, secret)
 pusherReceive = pysher.Pusher(key)
 
 from sasFile import sasFile
@@ -56,18 +56,18 @@ def my_func(*args, **kwargs):
     elif (task == "1" and output['hardware_id'] == hardwareId \
                       and output['command'] == "ENROLL_USER" \
                       and requestId == "0"):
-        fileObject.updateDesiredTask('5')
+        fileObject.updateDesiredTask('2')
         fileObject.updateRequestId(output['request_id'])
                     
-    elif (task == "5" and output['hardware_id'] == hardwareId \
+    elif (task == "2" and output['hardware_id'] == hardwareId \
                       and output['command'] == "TAKE_SECOND_FINGER"
                       and output['request_id'] == requestId):
-        fileObject.updateDesiredTask('6')
+        fileObject.updateDesiredTask('3')
         
-    elif (task == "6" and output['hardware_id'] == hardwareId \
+    elif (task == "3" and output['hardware_id'] == hardwareId \
                       and output['command'] == "TAKE_THIRD_FINGER"
                       and output['request_id'] == requestId):
-        fileObject.updateDesiredTask('7')
+        fileObject.updateDesiredTask('4')
         
     elif (task != "1" and output['hardware_id'] == hardwareId \
                       and output['command'] == "CANCEL_ENROLLMENT"
@@ -79,13 +79,13 @@ def my_func(*args, **kwargs):
                       and output['request_id'] == requestId):
         fileObject.updateDesiredTask('8')
         
-    elif (task != "1" and output['hardware_id'] == hardwareId):
-        
-
-            
-    print(output)
-    print(output['hardware_id'])
-    print(output['user_id'])
+#    elif (task != "1" and output['hardware_id'] == hardwareId):
+#        
+#
+#            
+#    print(output)
+#    print(output['hardware_id'])
+#    print(output['user_id'])
     
 
 def connect_handler(data):

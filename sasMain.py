@@ -455,17 +455,17 @@ if __name__ == '__main__':
     if deviceId != 0:
         f = configureFingerPrint()
         fingerPrint = threading.Thread(target = workWithFingerPrintSensor,args = (f,))
-        syncFingerPrint = threading.Thread(target = syncWithOtherDevices,args = (f,))
+#        syncFingerPrint = threading.Thread(target = syncWithOtherDevices,args = (f,))
         rfSensor = threading.Thread(target = workWithRFSensor)
         checkToKill = threading.Thread(target = functionKillProgram)
         
         fingerPrint.start()
-        syncFingerPrint.start()
+#        syncFingerPrint.start()
         rfSensor.start()
         checkToKill.start()
         
         fingerPrint.join()
-        syncFingerPrint.join()
+#        syncFingerPrint.join()
         rfSensor.join()
         checkToKill.join()
         
