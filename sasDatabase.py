@@ -168,6 +168,89 @@ class sasDatabase:
             return '0'
     ####################### All Functions Regarding Employee Information Table ###################
     
+    def createTableTempTableToSync(self,database): # Create A Temporary Table To Sync With The Server
+        curs = database.cursor()
+        try:      
+            curs.execute("Drop Table tempTableToSync")
+            self.databaseCommit(database)
+            t.sleep(1)
+        except Exception:
+            print("Does not Exists")
+#        curs.execute("DROP TABLE IF EXISTS tempTableToSync")
+#        self.databaseCommit(database)
+#        t.sleep(0.5)        
+        curs.execute("CREATE TABLE tempTableToSync(id             INTEGER PRIMARY KEY AUTOINCREMENT,\
+                                                   employeeId     NVARCHAR(10),\
+                                                   uniqueId       INTEGER,\
+                                                   firstName      TEXT,\
+                                                   fingerId       INTEGER, \
+                                                   fingerMatrix   TEXT, \
+                                                   desiredTask    NVARCHAR(2), \
+                                                   companyId      INTEGER)")
+        self.databaseCommit(database)
+
+    def insertToTempTableToSync(self,\
+                                employeeId,\
+                                uniqueId,\
+                                firstName,\
+                                fingerId,\
+                                fingerMatrix,\
+                                desiredTask,\
+                                companyId, \
+                                database): # Insert Into Temporary Table To Sync With The Server
+        curs = database.cursor()
+        if (firstName is None):
+            firstName = ""
+        try:
+            curs.execute("INSERT INTO tempTableToSync(employeeId,\
+                                                      uniqueId,\
+                                                      firstName,\
+                                                      fingerId,\
+                                                      fingerMatrix,\
+                                                      desiredTask,\
+                                                      companyId) VALUES (?,?,?,?,?,?,?)",\
+                                                      (str(employeeId),\
+                                                      int(uniqueId),\
+                                                      str(firstName),\
+                                                      int(fingerId),\
+                                                      str(fingerMatrix),\
+                                                      str(desiredTask),\
+                                                      int(companyId)))
+            self.databaseCommit(database)
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasDatabase{insertToTempTableToSync}: ",str(e))
+
+    def deleteFromTempTableToSync(self,uniqueId,fingerId,database): # Delete From Temporary Table After Synced
+        curs = database.cursor()
+        curs.execute("Delete FROM tempTableToSync \
+                      WHERE uniqueId = ? and fingerId = ?",(int(uniqueId),int(fingerId)))
+        self.databaseCommit(database)
+
+    def getInfoFromTempTableToDelete(self,database): # Get Data From Temporary Table To Sync With The Server
+        curs = database.cursor()
+        try:     
+            curs.execute("SELECT uniqueId,fingerId From tempTableToSync Where desiredTask = '3'")
+            desiredDetails = curs.fetchall()
+            if (desiredDetails != None):
+                return desiredDetails
+            else:
+                return "Synced"
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToDelete}",str(e))
+            return "Synced"
+
+    def getInfoFromTempTableToEnrollOrUpdate(self,database): # Get Data From Temporary Table To Sync With The Server
+        curs = database.cursor()
+        try:        
+            curs.execute("SELECT * From tempTableToSync Where desiredTask = '1' Limit 200")
+            desiredDetails = curs.fetchall()
+            if (desiredDetails != None):
+                return desiredDetails
+            else:
+                return "Synced"
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToEnrollOrUpdate}",str(e))
+            return "Synced"
     
     ######################### All Functions Regarding Event Information Table ####################
     def createTableEventListTable(self,database):
