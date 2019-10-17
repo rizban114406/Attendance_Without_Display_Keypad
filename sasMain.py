@@ -31,7 +31,6 @@ def getDeviceId():
         dbObject.databaseClose(database)
     except Exception as e:
         fileObject.updateExceptionMessage("sasMain{Connect To Database}: ",str(e))
-        dbObject.databaseClose(database)
         os.system('sudo pkill -f sasMain.py')
     return deviceId
     
@@ -41,7 +40,7 @@ lock = threading.Lock()
 startTime = fileObject.readStartTime()
 
 from sasAllAPI import sasAllAPI
-apiObject = sasAllAPI()
+
 REQUESTTIMEOUT = 5
 ENROLLMENTTIMEOUT = 150
 def configureFingerPrint():
@@ -92,12 +91,12 @@ def createNewTemplateToSync(f,employeeInfo,dbObject,database):
         
 
 def updateListOfUsedTemplates(f):
-    lock.acquire()
+#    lock.acquire()
     tableIndex1 = f.getTemplateIndex(0)
     tableIndex2 = f.getTemplateIndex(1)
     tableIndex3 = f.getTemplateIndex(2)
     tableIndex4 = f.getTemplateIndex(3)
-    lock.release()
+#    lock.release()
     index = []
     for i in range(0, len(tableIndex1)):
         index.append(tableIndex1[i])
@@ -113,18 +112,18 @@ def updateListOfUsedTemplates(f):
             storedIndex = storedIndex + str(i) + '-'
     fileObject.updateStoredIndex(storedIndex)
     
-def checkEmployeeInfoTable(f,dbObject,database):
+def checkEmployeeInfoTable(dbObject,database):
     try:    
         templatesStoredSensor = fileObject.readStoredIndex()
         templateStoredDatabase = dbObject.getEmployeeTemplateNumber(database)
         notListedTemplateNumber = list(set(templateStoredDatabase) - set(templatesStoredSensor))
         dbObject.deleteFromEmployeeInfoTableToSync(notListedTemplateNumber,database)
-        notListedTemplateNumber = list(set(templatesStoredSensor) - set(templateStoredDatabase))
-        for deleteId in notListedTemplateNumber:
-            if deleteId != '':
-                lock.acquire()
-                f.deleteTemplate(int(deleteId))
-                lock.release()
+#        notListedTemplateNumber = list(set(templatesStoredSensor) - set(templateStoredDatabase))
+#        for deleteId in notListedTemplateNumber:
+#            if deleteId != '':
+#                lock.acquire()
+#                f.deleteTemplate(int(deleteId))
+#                lock.release()
     except Exception as e:
         fileObject.updateExceptionMessage("sasMain{checkEmployeeInfoTable}: ",str(e))
         
@@ -132,14 +131,13 @@ def syncUsersToSensor(f,dbObject,database):
     try:
         getDataToDelete = dbObject.getInfoFromTempTableToDelete(database)
         getDataToSync = dbObject.getInfoFromTempTableToEnrollOrUpdate(database)
-        if (getDataToDelete != "Synced"):
+        if (getDataToDelete != "Synced" or getDataToSync != "Synced"):
             for reading in getDataToDelete:
                 prevId = dbObject.checkEmployeeInfoTableToDelete(reading[0],reading[1],database)
                 f.deleteTemplate(prevId)
                 dbObject.deleteFromEmployeeInfoTable(reading[0],reading[1],database)
                 dbObject.deleteFromTempTableToSync(reading[0],reading[1],database)
                 t.sleep(.3)
-        if (getDataToSync != "Synced"):
             for reading in getDataToSync:
                 prevId = dbObject.checkEmployeeInfoTableToDelete(reading[2],reading[4],database)
                 if prevId > 0:
@@ -147,12 +145,20 @@ def syncUsersToSensor(f,dbObject,database):
                     dbObject.deleteFromEmployeeInfoTable(reading[2],reading[4],database)
                 createNewTemplateToSync(f,reading,dbObject,database)
                 t.sleep(.3)
+            updateListOfUsedTemplates(f)
+            fileObject.updateSyncConfStatus('0')
+        else:
             print("Device Is Fully Synced With The Server")
+            fileObject.updateSyncConfStatus('0')
+            
     except Exception as e:
-        fileObject.updateDesiredTask('1')
+        fileObject.updateExceptionMessage("sasMain{syncUsersToSensor}: ",str(e))
+        os.system('sudo pkill -f sasMain.py')
+#        fileObject.updateDesiredTask('1')
                          
-def getRFCardInformation(deviceId):
+def getRFCardInformation():
     try:
+        apiObject = sasAllAPI()
         dbObject = sasDatabase()
         database = dbObject.connectDataBase()
         receivedData = dbObject.getInfoFromEmployeeCardInfoTable(database)
@@ -163,30 +169,32 @@ def getRFCardInformation(deviceId):
             return "Server Down"
         else:
             if(len(receivedDataSync['data']) > 0 or len(receivedDataSync['delete_request_enrollment']) > 0):
-                if len(receivedDataSync['data']) > 0:
-                    for data in receivedDataSync['data']:
-                        # print (data['uniqueid']," ",data['companyid'])
-                        dbObject.insertIntoEmployeeCardInfoTable(data['employeeid'],\
-                                                                 data['uniqueid'],\
-                                                                 data['firstname'],\
-                                                                 data['cardnumber'],\
-                                                                 data['companyid'],\
-                                                                 database)
-                if len(receivedDataSync['delete_request_enrollment']) > 0:
-                    for data in receivedDataSync['delete_request_enrollment']:
-                        dbObject.deleteFromEmployeeCardInfoTable(data['uniqueid'],data['cardnumber'],database)
-                return "Synced"
+                for data in receivedDataSync['data']:
+                    # print (data['uniqueid']," ",data['companyid'])
+                    dbObject.insertIntoEmployeeCardInfoTable(data['employeeid'],\
+                                                             data['uniqueid'],\
+                                                             data['firstname'],\
+                                                             data['cardnumber'],\
+                                                             data['companyid'],\
+                                                             database)
+                for data in receivedDataSync['delete_request_enrollment']:
+                    dbObject.deleteFromEmployeeCardInfoTable(data['uniqueid'],data['cardnumber'],database)
+                return "Synced From Server"   
             else:
-                return "Synced"
+                print("Device Is Already Synced With The Server")
+                return "Already Synced"
         dbObject.databaseClose(database)
     except Exception as e:
         fileObject.updateExceptionMessage("sasSyncDevice{getRFCardInformation}",str(e))
         return "Error"
-def getFingerprintInformation(f):
+#        os.system('sudo pkill -f sasMain.py')
+        
+def getFingerprintInformation():
     try:
+        apiObject = sasAllAPI()
         dbObject = sasDatabase()
         database = dbObject.connectDataBase()
-        checkEmployeeInfoTable(f,dbObject,database)
+        checkEmployeeInfoTable(dbObject,database)
         receivedData = dbObject.getInfoFromEmployeeInfoTable(database)
         receivedDataSync = apiObject.getDataToSync(receivedData,deviceId)
         if(receivedDataSync == "Some Thing Is Wrong"):
@@ -194,7 +202,7 @@ def getFingerprintInformation(f):
         elif(receivedDataSync == "Server Error"):
             return "Server Down"
         else:
-            if len(receivedDataSync['data']) > 0:            
+            if(len(receivedDataSync['data']) > 0 or len(receivedDataSync['delete_request_enrollment']) > 0):
                 for data in receivedDataSync['data']:
                     dbObject.insertToTempTableToSync(data['employeeid'],\
                                                          data['uniqueid'],\
@@ -204,26 +212,38 @@ def getFingerprintInformation(f):
                                                          '1',\
                                                          data['companyid'],\
                                                          database)
-                    t.sleep(0.2)
-            if len(receivedDataSync['delete_request_enrollment']) > 0:
-                dbObject.insertToTempTableToSync("N",\
-                                                 data['uniqueid'],\
-                                                 "N",\
-                                                 data['fingernumber'],\
-                                                 "N",\
-                                                 '3',\
-                                                 '0',\
-                                                 database)
-                t.sleep(0.2)
+                    t.sleep(0.1)
+                for data in receivedDataSync['delete_request_enrollment']:
+                    dbObject.insertToTempTableToSync("N",\
+                                                     data['uniqueid'],\
+                                                     "N",\
+                                                     data['fingernumber'],\
+                                                     "N",\
+                                                     '3',\
+                                                     '0',\
+                                                     database)
+                    t.sleep(0.1)
+                return "Synced From Server"          
             else:
                 print("Device Is Already Synced With The Server")
+                return "Already Synced"
         dbObject.databaseClose(database)
     except Exception as e:
         fileObject.updateExceptionMessage("sasMain{syncWithOtherDevices}: ",str(e))
-        dbObject.databaseClose(database)
-        os.system('sudo pkill -f sasMain.py')
+        return "Error"
+#        os.system('sudo pkill -f sasMain.py')
         
-def syncronizationProcess(f):
+def syncronizationProcess():
+    while True:
+        if (fileObject.readSyncConfStatus() == '1'):
+            cardSyncStatus = getRFCardInformation()
+            fingerSyncStatus = getFingerprintInformation()
+            
+            if fingerSyncStatus == "Synced From Server":
+                fileObject.updateSyncConfStatus('2')
+            t.sleep(2)
+        else:
+            t.sleep(5)
     
         
 def calculateTimeDifference(currentDateTime,timeLimit):
@@ -333,7 +353,7 @@ def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,da
     matrix = ""
     for i in characterMatrix:
         matrix = matrix+ str(i)+ "-"
-        
+    apiObject = sasAllAPI() 
     receivedData = apiObject.getFingerId(uniqueId,matrix,selectedCompany,deviceId)
     if receivedData[0] != "Success":
         f.storeTemplate(int(receivedData[1][3]),0x01)
@@ -453,7 +473,8 @@ def workWithFingerPrintSensor(f):
             while True:  
                 while (f.readImage() == False):
                     desiredTask = fileObject.readDesiredTask()
-                    if (desiredTask == '2') :
+                    confStatus = fileObject.readSyncConfStatus()
+                    if (desiredTask == '2' or confStatus == '2') :
                         break
                     t.sleep(.8)
                 lock.acquire()
@@ -470,7 +491,6 @@ def workWithFingerPrintSensor(f):
                     fileObject.updateDesiredTask('1')
                 elif confStatus == '2':
                     syncUsersToSensor(f,dbObject,database)
-                    fileObject.updateDesiredTask('1')
                 lock.release()
                 t.sleep(1)
     #            print("A finger Is read")

@@ -16,6 +16,22 @@ class sasFile:
         file = open('desiredTask.txt', 'w+')
         file.write(command)
         file.close()
+        
+    def readSyncConfStatus(self):
+        try:
+            file = open('syncConfStatus.txt','r')
+            state = file.read(1)
+            file.close()
+        except Exception as e:
+            self.updateSyncConfStatus('0')
+            self.updateExceptionMessage("sasFile{readDesiredTask}",str(e))
+            state = '0'
+        return state
+        
+    def updateSyncConfStatus(self,state):
+        file = open('syncConfStatus.txt', 'w+')
+        file.write(state)
+        file.close()
 
     def updateExceptionMessage(self,exceptionScript,exceptionMessage):
         nowTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
