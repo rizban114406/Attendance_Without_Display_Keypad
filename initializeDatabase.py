@@ -14,12 +14,12 @@ try:
 #    dbObject.createTableTempTableToSync(database)
     dbObject.createTableDeviceInfoTable(database)
     dbObject.createTableConfigInfoTable(database)
-    dbObject.insertIntoConfigurationTable("1","103.108.147.49","/SAS-test/public/api/",database)
-    url = "http://" + "103.108.147.49" + "/SAS-test/public/api/" + "server_heartbit"
+    dbObject.insertIntoConfigurationTable("1","sas.aqualinkbd.com","/sas-test/api/",database)
+    url = "http://" + "sas.aqualinkbd.com" + "/sas-test/api/" + "server_heartbit"
     fileObject.updateHearBitURL(url)
     fileObject.updateConfigUpdateStatus('0')
     dbObject.databaseClose(database)
-    print ("Device Initialized")
+    print ("Device Initialized From Main")
 except Exception as e:
     dbObject.createTableEmployeeInfoTable(database)
     dbObject.createTableEventListTable(database)
@@ -28,8 +28,8 @@ except Exception as e:
 #    dbObject.createTableTempTableToSync(database)
     dbObject.createTableDeviceInfoTable(database)
     dbObject.createTableConfigInfoTable(database)
-    dbObject.insertIntoConfigurationTable("1","103.108.147.49","/SAS-test/public/api/",database)
-    url = "http://" + "103.108.147.49" + "/SAS-test/public/api/" + "server_heartbit"
+    dbObject.insertIntoConfigurationTable("1","sas.aqualinkbd.com","/sas-test/api/",database)
+    url = "http://" + "sas.aqualinkbd.com" + "/sas-test/api/" + "server_heartbit"
     fileObject.updateHearBitURL(url)
     fileObject.updateConfigUpdateStatus('0')
     dbObject.databaseClose(database)

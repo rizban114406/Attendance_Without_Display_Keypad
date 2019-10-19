@@ -112,6 +112,7 @@ class sasAllAPI:
     def getCardDataToSync(self,receivedData,deviceId):
         try:
             mainURL = self.mainURL + "rfid_sync"
+            print(mainURL)
             dataToSend = json.dumps(receivedData)
             payload = {"data"     : dataToSend,\
                        "deviceid" : deviceId}

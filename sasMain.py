@@ -20,11 +20,9 @@ from pyfingerprint.pyfingerprint import PyFingerprint
 from sasFile import sasFile
 fileObject = sasFile()
 
-from sasDatabase import sasDatabase
-
 def getDeviceId():
-    dbObject = sasDatabase()
     try:
+        from sasDatabase import sasDatabase
         dbObject = sasDatabase()
         database = dbObject.connectDataBase()
         deviceId = dbObject.getDeviceId(database)
@@ -37,10 +35,11 @@ def getDeviceId():
 desiredTask = '1'
 confStatus = '0'
 lock = threading.Lock()
+synclock = threading.Lock()
 startTime = fileObject.readStartTime()
 
 from sasAllAPI import sasAllAPI
-
+apiObject = sasAllAPI()
 REQUESTTIMEOUT = 5
 ENROLLMENTTIMEOUT = 150
 def configureFingerPrint():
@@ -69,10 +68,8 @@ def createNewTemplateToSync(f,employeeInfo,dbObject,database):
     characteristics = []
     for i in range(0,len(x)-1):
         characteristics.append(int(x[i]))
-    lock.acquire()
     f.uploadCharacteristics(0x01,characteristics)
     f.storeTemplate(int(employeeInfo[4]),0x01)
-    lock.release()
     import re
     sp = re.split(' |-|',str(employeeInfo['employeeid']))
     if(len(sp) == 2):
@@ -156,13 +153,14 @@ def syncUsersToSensor(f,dbObject,database):
         os.system('sudo pkill -f sasMain.py')
 #        fileObject.updateDesiredTask('1')
                          
-def getRFCardInformation():
+def getRFCardInformation(dbObject,database):
     try:
-        apiObject = sasAllAPI()
-        dbObject = sasDatabase()
-        database = dbObject.connectDataBase()
+        print("Current syncronizationProcess getRFCardInformation Thread ID: {}".format(threading.current_thread()))
+        print("Program is Here")
         receivedData = dbObject.getInfoFromEmployeeCardInfoTable(database)
+        print(receivedData)
         receivedDataSync = apiObject.getCardDataToSync(receivedData,deviceId)
+        print(receivedDataSync)
         if(receivedDataSync == "Some Thing Is Wrong"):
             return "API Error"
         elif(receivedDataSync == "Server Error"):
@@ -185,18 +183,18 @@ def getRFCardInformation():
                 return "Already Synced"
         dbObject.databaseClose(database)
     except Exception as e:
-        fileObject.updateExceptionMessage("sasSyncDevice{getRFCardInformation}",str(e))
+        fileObject.updateExceptionMessage("sasMain{getRFCardInformation}",str(e))
         return "Error"
 #        os.system('sudo pkill -f sasMain.py')
         
-def getFingerprintInformation():
+def getFingerprintInformation(dbObject,database):
     try:
-        apiObject = sasAllAPI()
-        dbObject = sasDatabase()
-        database = dbObject.connectDataBase()
+        print("Current syncronizationProcess getFingerprintInformation Thread ID: {}".format(threading.current_thread()))
+#        apiObject = sasAllAPI()
         checkEmployeeInfoTable(dbObject,database)
         receivedData = dbObject.getInfoFromEmployeeInfoTable(database)
         receivedDataSync = apiObject.getDataToSync(receivedData,deviceId)
+        print(receivedData)
         if(receivedDataSync == "Some Thing Is Wrong"):
             return "API Error"
         elif(receivedDataSync == "Server Error"):
@@ -227,23 +225,34 @@ def getFingerprintInformation():
             else:
                 print("Device Is Already Synced With The Server")
                 return "Already Synced"
-        dbObject.databaseClose(database)
+#        dbObject.databaseClose(database)
     except Exception as e:
-        fileObject.updateExceptionMessage("sasMain{syncWithOtherDevices}: ",str(e))
+        fileObject.updateExceptionMessage("sasMain{getFingerprintInformation}: ",str(e))
         return "Error"
 #        os.system('sudo pkill -f sasMain.py')
         
 def syncronizationProcess():
     while True:
-        if (fileObject.readSyncConfStatus() == '1'):
-            cardSyncStatus = getRFCardInformation()
-            fingerSyncStatus = getFingerprintInformation()
-            
-            if fingerSyncStatus == "Synced From Server":
-                fileObject.updateSyncConfStatus('2')
-            t.sleep(2)
-        else:
-            t.sleep(5)
+        try:
+            print("Current syncronizationProcess Thread ID: {}".format(threading.current_thread()))
+            if (fileObject.readSyncConfStatus() == '1'):
+                from sasDatabase import sasDatabase
+                dbObject = sasDatabase()
+                database = dbObject.connectDataBase()
+#                synclock.acquire()
+                getRFCardInformation(dbObject,database)
+#                synclock.release()
+                fingerSyncStatus = getFingerprintInformation(dbObject,database)
+                
+                if fingerSyncStatus == "Synced From Server":
+                    fileObject.updateSyncConfStatus('2')
+                elif fingerSyncStatus == "Already Synced":
+                    fileObject.updateSyncConfStatus('0')
+                t.sleep(2)
+            else:
+                t.sleep(5)
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasMain{syncronizationProcess}: ",str(e))
     
         
 def calculateTimeDifference(currentDateTime,timeLimit):
@@ -333,8 +342,7 @@ def takeFingerprintToEnroll(f,currentDateTime):
                                     return "Time Out"
                             else:
                                 print("TIME OUT")
-                                return "Time Out"
-                        
+                                return "Time Out"                       
                     else:
                         print("TIME OUT")
                         return "Time Out"
@@ -468,10 +476,12 @@ def workWithFingerPrintSensor(f):
     global confStatus
     while True:
         try:
+            from sasDatabase import sasDatabase
             dbObject = sasDatabase()
             database = dbObject.connectDataBase()
             while True:  
                 while (f.readImage() == False):
+                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
                     desiredTask = fileObject.readDesiredTask()
                     confStatus = fileObject.readSyncConfStatus()
                     if (desiredTask == '2' or confStatus == '2') :
@@ -495,7 +505,7 @@ def workWithFingerPrintSensor(f):
                 t.sleep(1)
     #            print("A finger Is read")
         except Exception as e:
-            fileObject.updateExceptionMessage("sasMain{workWithFingerPrintSensor}",str(e))
+            fileObject.updateExceptionMessage("sasMain{workWithFingerPrintSensor}: ",str(e))
             os.system('sudo pkill -f sasMain.py')
             lock.release()
         
@@ -503,7 +513,11 @@ def workWithRFSensor():
     global desiredTask
     while True:
         try:
+            from sasDatabase import sasDatabase
+            dbObject = sasDatabase()
+            database = dbObject.connectDataBase()
             while True:
+                print("Current workWithRFSensor Thread ID: {}".format(threading.current_thread()))
                 rfScannerValue = readFromRFIDScanner()
                 employeeCardNumber = int(rfScannerValue,16)
                 print(employeeCardNumber)
@@ -514,12 +528,12 @@ def workWithRFSensor():
                     desiredTask = '7'
                 if desiredTask == '7':
     #                print('Card Number is: {}'.format(employeeCardNumber))
-                    createEventLogg(employeeCardNumber,'2')
+                    createEventLogg(employeeCardNumber,'2',dbObject,database)
                     fileObject.updateDesiredTask('1')
                 lock.release()
                 t.sleep(1)
         except Exception as e:
-            fileObject.updateExceptionMessage("sasMain{workWithRFSensor}",str(e))
+            fileObject.updateExceptionMessage("sasMain{workWithRFSensor}: ",str(e))
             os.system('sudo pkill -f sasMain.py')
             lock.release()
 
@@ -529,29 +543,31 @@ def functionKillProgram():
     task = fileObject.readDesiredTask()
     if task != '1':
         while 1:
+            print("Current functionKillProgram Thread ID: {}".format(threading.current_thread()))
             task = fileObject.readDesiredTask()
             if task == '1':
                 break
             t.sleep(1)
     os.system('sudo pkill -f sasMain.py')
-    os.system('sudo pkill -f sasSyncDevice.py')
+#    os.system('sudo pkill -f sasSyncDevice.py')
         
 if __name__ == '__main__':
     deviceId = getDeviceId()
+    deviceId = 1
     if deviceId != 0:
         f = configureFingerPrint()
         fingerPrint = threading.Thread(target = workWithFingerPrintSensor,args = (f,))
-#        syncFingerPrint = threading.Thread(target = syncWithOtherDevices,args = (f,))
+        syncFingerPrint = threading.Thread(target = syncronizationProcess)
         rfSensor = threading.Thread(target = workWithRFSensor)
         checkToKill = threading.Thread(target = functionKillProgram)
         
         fingerPrint.start()
-#        syncFingerPrint.start()
+        syncFingerPrint.start()
         rfSensor.start()
         checkToKill.start()
         
         fingerPrint.join()
-#        syncFingerPrint.join()
+        syncFingerPrint.join()
         rfSensor.join()
         checkToKill.join()
         

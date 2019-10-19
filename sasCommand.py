@@ -5,7 +5,6 @@ import sys
 import time
 import pysher
 import logging
-
 root = logging.getLogger()
 root.setLevel(logging.INFO)
 ch = logging.StreamHandler(sys.stdout)
@@ -23,6 +22,8 @@ fileObject = sasFile()
 
 from sasAllAPI import sasAllAPI
 apiObject = sasAllAPI()
+
+output = ""
 
 def getHardwareId():
     # Extract serial from cpuinfo file
@@ -42,42 +43,44 @@ def getHardwareId():
 hardwareId = getHardwareId()
 
 def my_func(*args, **kwargs):
+    global output
     output = json.loads(args[0])
-    hardwareId = "asdasdas"
-    task = fileObject.readDesiredTask()
-    requestId = fileObject.readRequestId()
-    if (output['command'] == "ONLINE_FLAG" and \
-        output['hardware_id'] == hardwareId):
-        if task == '1':
-            apiObject.confirmDeviceStatus(hardwareId)
-        else:
-            print("DEVICE IS BUSY")
+#    task = fileObject.readDesiredTask()
+#    requestId = fileObject.readRequestId()
+#    print()
+#    if (output['command'] == "ONLINE_FLAG" and \
+#        output['hardwareid'] == hardwareId):
+#        if task == '1':
+#            apiObject.confirmDeviceStatus(hardwareId)
+#            print("Sent")
+#        else:
+#            print("DEVICE IS BUSY")
         
-    elif (task == "1" and output['hardware_id'] == hardwareId \
-                      and output['command'] == "ENROLL_USER" \
-                      and requestId == "0"):
-        fileObject.updateDesiredTask('2')
-        fileObject.updateRequestId(output['request_id'])
-                    
-    elif (task == "2" and output['hardware_id'] == hardwareId \
-                      and output['command'] == "TAKE_SECOND_FINGER"
-                      and output['request_id'] == requestId):
-        fileObject.updateDesiredTask('3')
-        
-    elif (task == "3" and output['hardware_id'] == hardwareId \
-                      and output['command'] == "TAKE_THIRD_FINGER"
-                      and output['request_id'] == requestId):
-        fileObject.updateDesiredTask('4')
-        
-    elif (task != "1" and output['hardware_id'] == hardwareId \
-                      and output['command'] == "CANCEL_ENROLLMENT"
-                      and output['request_id'] == requestId):
-        fileObject.updateDesiredTask('8')
-        
-    elif (task != "1" and output['hardware_id'] == hardwareId \
-                      and output['command'] == "TIME_OUT"
-                      and output['request_id'] == requestId):
-        fileObject.updateDesiredTask('8')
+#    elif (task == "1" and output['hardware_id'] == hardwareId \
+#                      and output['command'] == "ENROLL_USER" \
+#                      and requestId == "0"):
+#        fileObject.updateDesiredTask('2')
+#        fileObject.updateRequestId(output['request_id'])
+#                    
+#    elif (task == "2" and output['hardware_id'] == hardwareId \
+#                      and output['command'] == "TAKE_SECOND_FINGER"
+#                      and output['request_id'] == requestId):
+#        fileObject.updateDesiredTask('3')
+#        
+#    elif (task == "3" and output['hardware_id'] == hardwareId \
+#                      and output['command'] == "TAKE_THIRD_FINGER"
+#                      and output['request_id'] == requestId):
+#        fileObject.updateDesiredTask('4')
+#        
+#    elif (task != "1" and output['hardware_id'] == hardwareId \
+#                      and output['command'] == "CANCEL_ENROLLMENT"
+#                      and output['request_id'] == requestId):
+#        fileObject.updateDesiredTask('8')
+#        
+#    elif (task != "1" and output['hardware_id'] == hardwareId \
+#                      and output['command'] == "TIME_OUT"
+#                      and output['request_id'] == requestId):
+#        fileObject.updateDesiredTask('8')
         
 #    elif (task != "1" and output['hardware_id'] == hardwareId):
 #        
@@ -97,6 +100,38 @@ pusherReceive.connect()
 
 while True:
     time.sleep(1)
+    print("At The Start")
+    global output
+    if (output != ""):
+        localOutput = output  
+        hardwareId = "asdasdas"
+        command = localOutput['command']
+#        print(hardwareId)
+#        print(command)
+        task = fileObject.readDesiredTask()
+        requestId = fileObject.readRequestId()
+        if (command == "ONLINE_FLAG" and \
+            hardwareId == hardwareId):
+            if task == '1':
+                apiObject.confirmDeviceStatus(hardwareId)
+                print(localOutput)
+                print(output)
+                if (localOutput == output):
+                    output = ""
+            else:
+                print("DEVICE IS BUSY")
+        elif (task == "1" and localOutput['hardwareId'] == hardwareId \
+                          and localOutput['command'] == "ENROLL_USER" \
+                          and requestId == "0"):
+            fileObject.updateDesiredTask('2')
+            fileObject.updateRequestId(output['requestId'])
+            deviceInfoData = {"hardwareId"   : hardwareId,\
+                              "command"  : "ENROLL_COMMAND_RECEIVED",\
+                              "requestId"    : output['requestId']}
+            commandToSend = json.dumps(deviceInfoData)
+            print(commandToSend)
+            pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
+            output = ""
 
 
 
