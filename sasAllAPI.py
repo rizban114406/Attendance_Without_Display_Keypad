@@ -252,7 +252,22 @@ class sasAllAPI:
         except Exception as e:
             fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
             return "Server Error"
-
         
+    def confirmSyncStatusReceived(self,hardwareId):
+        try:
+            mainURL = self.mainURL + "update_sync_status"
+            payload = {"hardwareId" : hardwareId }
+            print("Data To Be Sent: {}".format(payload))
+            r = requests.post(mainURL, data = payload,timeout = 3)
+            output = json.loads(r.content)
+            print("Data Received {}".format(r.content))
+            if (output['status'] == "success"):
+                return '1'
+            else:
+                return '0'
+        
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
+            return "Server Error"
                 
 

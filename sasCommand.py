@@ -1,4 +1,3 @@
-import time as t
 import pusher as push
 import json
 import sys
@@ -19,6 +18,8 @@ pusherReceive = pysher.Pusher(key)
 
 from sasFile import sasFile
 fileObject = sasFile()
+fileObject.updateRequestId("0")
+fileObject.updateDesiredTask("1")
 
 from sasAllAPI import sasAllAPI
 apiObject = sasAllAPI()
@@ -45,51 +46,6 @@ hardwareId = getHardwareId()
 def my_func(*args, **kwargs):
     global output
     output = json.loads(args[0])
-#    task = fileObject.readDesiredTask()
-#    requestId = fileObject.readRequestId()
-#    print()
-#    if (output['command'] == "ONLINE_FLAG" and \
-#        output['hardwareid'] == hardwareId):
-#        if task == '1':
-#            apiObject.confirmDeviceStatus(hardwareId)
-#            print("Sent")
-#        else:
-#            print("DEVICE IS BUSY")
-        
-#    elif (task == "1" and output['hardware_id'] == hardwareId \
-#                      and output['command'] == "ENROLL_USER" \
-#                      and requestId == "0"):
-#        fileObject.updateDesiredTask('2')
-#        fileObject.updateRequestId(output['request_id'])
-#                    
-#    elif (task == "2" and output['hardware_id'] == hardwareId \
-#                      and output['command'] == "TAKE_SECOND_FINGER"
-#                      and output['request_id'] == requestId):
-#        fileObject.updateDesiredTask('3')
-#        
-#    elif (task == "3" and output['hardware_id'] == hardwareId \
-#                      and output['command'] == "TAKE_THIRD_FINGER"
-#                      and output['request_id'] == requestId):
-#        fileObject.updateDesiredTask('4')
-#        
-#    elif (task != "1" and output['hardware_id'] == hardwareId \
-#                      and output['command'] == "CANCEL_ENROLLMENT"
-#                      and output['request_id'] == requestId):
-#        fileObject.updateDesiredTask('8')
-#        
-#    elif (task != "1" and output['hardware_id'] == hardwareId \
-#                      and output['command'] == "TIME_OUT"
-#                      and output['request_id'] == requestId):
-#        fileObject.updateDesiredTask('8')
-        
-#    elif (task != "1" and output['hardware_id'] == hardwareId):
-#        
-#
-#            
-#    print(output)
-#    print(output['hardware_id'])
-#    print(output['user_id'])
-    
 
 def connect_handler(data):
     channel = pusherReceive.subscribe('enroll-channel')
@@ -97,6 +53,13 @@ def connect_handler(data):
 
 pusherReceive.connection.bind('pusher:connection_established', connect_handler)
 pusherReceive.connect()
+
+def sendPusherCommand(hardwareId,command,requestId):
+    deviceInfoData = {"hardwareId" : hardwareId,\
+                      "command"    : command,\
+                      "requestId"  : requestId}
+    commandToSend = json.dumps(deviceInfoData)
+    pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
 
 while True:
     time.sleep(1)
@@ -106,16 +69,14 @@ while True:
         localOutput = output  
         hardwareId = "asdasdas"
         command = localOutput['command']
-#        print(hardwareId)
-#        print(command)
         task = fileObject.readDesiredTask()
         requestId = fileObject.readRequestId()
         if (command == "ONLINE_FLAG" and \
             hardwareId == hardwareId):
             if task == '1':
                 apiObject.confirmDeviceStatus(hardwareId)
-                print(localOutput)
-                print(output)
+#                print(localOutput)
+#                print(output)
                 if (localOutput == output):
                     output = ""
             else:
@@ -123,35 +84,78 @@ while True:
         elif (task == "1" and localOutput['hardwareId'] == hardwareId \
                           and localOutput['command'] == "ENROLL_USER" \
                           and requestId == "0"):
+            fileObject.updateRequestId(localOutput['requestId'])
+            fileObject.updateEnrollingUserInfo(localOutput['uniqueId'],localOutput['selectedCompany'],localOutput['employeeId'])
             fileObject.updateDesiredTask('2')
-            fileObject.updateRequestId(output['requestId'])
-            deviceInfoData = {"hardwareId"   : hardwareId,\
-                              "command"  : "ENROLL_COMMAND_RECEIVED",\
-                              "requestId"    : output['requestId']}
-            commandToSend = json.dumps(deviceInfoData)
-            print(commandToSend)
-            pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
+            print("Take Info of the Enrolling User")
+            sendPusherCommand(hardwareId,"ENROLL_COMMAND_RECEIVED",localOutput['requestId'])          
             output = ""
-
-
-
-#if __name__ == '__main__':
-#    command = '1'
-#    fileObject.updateDesiredTask('1')
-#    while True:
-#      try:
-#        ch = digit()
-#        print("Pressed Key is {}".format(ch))
-#        if (ch == '#'):
-#            fileObject.updateDesiredTask('2')
-#            while 1:
-#                task = fileObject.readDesiredTask()
-#                if task == '1':
-#                    break
-#                else:
-#                    pass
-#                t.sleep(1)
-#        t.sleep(1)
-#      except Exception as e:
-#          fileObject.updateExceptionMessage("sasCommand",str(e))
-#          t.sleep(5)
+            
+        elif (task == "2" and localOutput['hardwareId'] == hardwareId \
+                          and localOutput['command'] == "TAKE_SECOND_FINGER"
+                          and localOutput['requestId'] == requestId):
+            fileObject.updateDesiredTask('3')
+            if (localOutput == output):
+                output = ""
+                
+        elif (task != "1" and localOutput['hardwareId'] == hardwareId \
+                          and localOutput['command'] == "TAKE_THIRD_FINGER"
+                          and localOutput['requestId'] == requestId):
+            fileObject.updateDesiredTask('4')
+            if (localOutput == output):
+                output = ""
+                
+        elif (task == "3" and localOutput['hardwareId'] == hardwareId \
+                          and localOutput['command'] == "CANCEL_ENROLLMENT"
+                          and localOutput['requestId'] == requestId):
+            fileObject.updateDesiredTask('5')
+            sendPusherCommand(hardwareId,"ENROLLMENT_CANCELLED",localOutput['requestId'])
+            if (localOutput == output):
+                output = ""        
+        elif (task == "3" and localOutput['hardwareId'] == hardwareId \
+                          and localOutput['command'] == "TIME_OUT"
+                          and localOutput['requestId'] == requestId):
+            fileObject.updateDesiredTask('5')
+            if (localOutput == output):
+                output = ""     
+        if (localOutput['hardwareId'] == hardwareId \
+            and localOutput['command'] == "SYNC_DEVICE"):
+            if (fileObject.readSyncConfStatus() == '0'):
+                status = apiObject.confirmSyncStatusReceived(hardwareId)
+                if (status == '1'):
+                    fileObject.updateSyncConfStatus('1')
+            if (localOutput == output):
+                output = ""     
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

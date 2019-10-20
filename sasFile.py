@@ -112,3 +112,19 @@ class sasFile:
         file.write(str(requestId))
         file.close()
         
+    def readEnrollingUserInfo(self):
+        try:           
+            file = open('enrollingUserInfo.txt','r')
+            requestInfo = file.readline()
+            file.close()
+            info = requestInfo.split('$')
+        except Exception as e:
+            self.updateExceptionMessage("sasFile{readEnrollingUserInfo}: ",str(e))
+        return (info[0],info[1],info[2])
+        
+    def updateEnrollingUserInfo(self, uniqueId, selectedCompany, employeeId):
+        data = str(uniqueId) + "$" + str(selectedCompany) + "$" + str(employeeId)
+        file = open('enrollingUserInfo.txt', 'w+')
+        file.write(str(data))
+        file.close()
+        
