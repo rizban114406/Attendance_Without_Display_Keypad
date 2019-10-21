@@ -60,6 +60,8 @@ def sendPusherCommand(hardwareId,command,requestId):
                       "requestId"  : requestId}
     commandToSend = json.dumps(deviceInfoData)
     pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
+    
+fileObject.updateRequestId("0")
 
 while True:
     time.sleep(1)
@@ -85,7 +87,7 @@ while True:
                           and localOutput['command'] == "ENROLL_USER" \
                           and requestId == "0"):
             fileObject.updateRequestId(localOutput['requestId'])
-            fileObject.updateEnrollingUserInfo(localOutput['uniqueId'],localOutput['selectedCompany'],localOutput['employeeId'])
+            fileObject.updateEnrollingUserInfo(localOutput['uniqueId'],localOutput['selectedCompany'])
             fileObject.updateDesiredTask('2')
             print("Take Info of the Enrolling User")
             sendPusherCommand(hardwareId,"ENROLL_COMMAND_RECEIVED",localOutput['requestId'])          
