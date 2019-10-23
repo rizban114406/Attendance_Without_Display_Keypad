@@ -231,26 +231,28 @@ class sasDatabase:
         try:     
             curs.execute("SELECT uniqueId,fingerId From tempTableToSync Where desiredTask = '3'")
             desiredDetails = curs.fetchall()
+            print(desiredDetails)
             if (desiredDetails != None):
                 return desiredDetails
             else:
-                return "Synced"
+                return []
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToDelete}",str(e))
-            return "Synced"
+            return []
 
     def getInfoFromTempTableToEnrollOrUpdate(self,database): # Get Data From Temporary Table To Sync With The Server
         curs = database.cursor()
         try:        
             curs.execute("SELECT * From tempTableToSync Where desiredTask = '1' Limit 200")
             desiredDetails = curs.fetchall()
+            print(desiredDetails)
             if (desiredDetails != None):
                 return desiredDetails
             else:
-                return "Synced"
+                return []
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{getInfoFromTempTableToEnrollOrUpdate}",str(e))
-            return "Synced"
+            return []
     
     ######################### All Functions Regarding Event Information Table ####################
     def createTableEventListTable(self,database):

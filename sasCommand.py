@@ -60,8 +60,6 @@ def sendPusherCommand(hardwareId,command,requestId):
                       "requestId"  : requestId}
     commandToSend = json.dumps(deviceInfoData)
     pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
-    
-fileObject.updateRequestId("0")
 
 while True:
     time.sleep(1)

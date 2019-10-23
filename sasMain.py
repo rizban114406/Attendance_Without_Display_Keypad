@@ -85,27 +85,28 @@ def checkCurrentDateTime():
     return (currentDateTime,currentTime)
 
 def createNewTemplateToSync(f,employeeInfo,dbObject,database):
-    x = str(employeeInfo['matrix']).split('-')
+    x = str(employeeInfo[5]).split('-')
     characteristics = []
     for i in range(0,len(x)-1):
         characteristics.append(int(x[i]))
     f.uploadCharacteristics(0x01,characteristics)
     f.storeTemplate(int(employeeInfo[4]),0x01)
     import re
-    sp = re.split(' |-|',str(employeeInfo['employeeid']))
+    sp = re.split(' |-|',str(employeeInfo[1]))
     if(len(sp) == 2):
         employee = sp[1]
     else:
         employee = sp[0]
 
-    dbObject.insertNewEmployee(employeeInfo['employeeid'], \
-                               employeeInfo['uniqueid'], \
-                               employeeInfo['firstname'], \
-                               employeeInfo['fingernumber'], \
-                               employeeInfo['matrix'], \
-                               employeeInfo['companyid'], \
+    dbObject.insertNewEmployee(employeeInfo[1], \
+                               employeeInfo[2], \
+                               employeeInfo[3], \
+                               employeeInfo[4], \
+                               employeeInfo[5], \
+                               employeeInfo[7], \
                                employee, \
                                database)
+    dbObject.deleteFromTempTableToSync(employeeInfo[2],employeeInfo[4],database)
         
 
 def updateListOfUsedTemplates(f):
@@ -149,7 +150,7 @@ def syncUsersToSensor(f,dbObject,database):
     try:
         getDataToDelete = dbObject.getInfoFromTempTableToDelete(database)
         getDataToSync = dbObject.getInfoFromTempTableToEnrollOrUpdate(database)
-        if (getDataToDelete != "Synced" or getDataToSync != "Synced"):
+        if (len(getDataToDelete) > 0 or len(getDataToSync) > 0):
             for reading in getDataToDelete:
                 prevId = dbObject.checkEmployeeInfoTableToDelete(reading[0],reading[1],database)
                 f.deleteTemplate(prevId)
@@ -222,6 +223,7 @@ def getFingerprintInformation(dbObject,database):
             return "Server Down"
         else:
             if(len(receivedDataSync['data']) > 0 or len(receivedDataSync['delete_request_enrollment']) > 0):
+                dbObject.createTableTempTableToSync(database)
                 for data in receivedDataSync['data']:
                     dbObject.insertToTempTableToSync(data['employeeid'],\
                                                          data['uniqueid'],\
@@ -444,6 +446,7 @@ def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,da
     for i in characterMatrix:
         matrix = matrix+ str(i)+ "-"
     receivedData = apiObject.getFingerId(uniqueId,matrix,selectedCompany,deviceId)
+    print(receivedData)
     if receivedData[0] == "Success":
         f.storeTemplate(int(receivedData[1][3]),0x01)
         dbObject.insertNewEmployee(receivedData[1][0], \
@@ -488,6 +491,11 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
                     print("Registered Unsuccessfuly")
                     t.sleep(1)
                     GPIO.output(21, 0)
+            else:
+                fileObject.updateRequestId("0")
+        else:
+            fileObject.updateRequestId("0")
+            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
                     #GPIO INDICATOR
     except Exception as e:
          fileObject.updateExceptionMessage("sasMain{enrollNewEmployee}: ",str(e))
@@ -579,12 +587,13 @@ def workWithFingerPrintSensor(f):
                     desiredTask = fileObject.readDesiredTask()
                     confStatus = fileObject.readSyncConfStatus()
                     print(desiredTask)
+                    print(confStatus)
                     if (desiredTask == '2' or confStatus == '2') :
                         break
                     t.sleep(.8)
                 lock.acquire()
                 desiredTask = fileObject.readDesiredTask()
-                if desiredTask == '1':
+                if desiredTask == '1'and confStatus != '2':
                     fileObject.updateDesiredTask('6')
                     desiredTask = '6'
     #            print("Modified Task is {}".format(desiredTask))    
@@ -595,6 +604,7 @@ def workWithFingerPrintSensor(f):
                     enrollNewEmployee(f,deviceId,dbObject,database)
                     fileObject.updateDesiredTask('1')
                 elif confStatus == '2':
+                    print("Sync Process")
                     syncUsersToSensor(f,dbObject,database)
                 lock.release()
                 t.sleep(1)
