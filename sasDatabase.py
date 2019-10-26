@@ -668,10 +668,10 @@ class sasDatabase:
     
     def insertIntoTimeConfig(self, startTime, database):
         curs = database.cursor()
-        curs.execute("IF NOT EXISTS ( SELECT * FROM timeConfig WHERE startTime = ?)\
-                      BEGIN \
-                      INSERT INTO timeConfig(startTime,duration) VALUES (?,"")",\
-                                               (startTime,startTime),)
+        curs.execute("INSERT INTO timeConfig(startTime,\
+                                             restartTime,\
+                                             duration) VALUES (?,"","")",\
+                                             (startTime))
         self.databaseCommit(database)
         
     def updateRestartTimeConfig(self, startTime, restartTime, database):

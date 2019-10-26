@@ -30,7 +30,7 @@ def updateTimeDuration():
 if __name__ == '__main__':
     try:
         deviceInfo = dbObject.getAllDeviceInfo(database)
-        durationUpdateFlag = updateTimeDuration()()
+        durationUpdateFlag = updateTimeDuration()
         if deviceInfo != '0' and durationUpdateFlag == 1:
             timeIntervals = dbObject.getDataTimeConfig(database)
             deviceInfoData = {"deviceid"   : deviceInfo[1],\

@@ -25,6 +25,7 @@ if __name__ == '__main__':
         dbObject.updateRestartTimeConfig(startTime,NowTime,database)
     realTime = setDeviceTime()
     if realTime == "Not Successfull": 
+        NowTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         dbObject.insertIntoTimeConfig(NowTime, database)
         fileObject.updateStartTime(NowTime)
     else:

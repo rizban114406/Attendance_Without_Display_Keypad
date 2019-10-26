@@ -56,7 +56,6 @@ def getDeviceId():
 desiredTask = '1'
 confStatus = '0'
 lock = threading.Lock()
-synclock = threading.Lock()
 startTime = fileObject.readStartTime()
 
 from sasAllAPI import sasAllAPI
@@ -262,9 +261,7 @@ def syncronizationProcess():
                 from sasDatabase import sasDatabase
                 dbObject = sasDatabase()
                 database = dbObject.connectDataBase()
-#                synclock.acquire()
                 getRFCardInformation(dbObject,database)
-#                synclock.release()
                 fingerSyncStatus = getFingerprintInformation(dbObject,database)
                 
                 if fingerSyncStatus == "Synced From Server":
@@ -662,17 +659,17 @@ if __name__ == '__main__':
     if deviceId != 0:
         f = configureFingerPrint()
         fingerPrint = threading.Thread(target = workWithFingerPrintSensor,args = (f,))
-#        syncFingerPrint = threading.Thread(target = syncronizationProcess)
+        syncFingerPrint = threading.Thread(target = syncronizationProcess)
 #        rfSensor = threading.Thread(target = workWithRFSensor)
 #        checkToKill = threading.Thread(target = functionKillProgram)
         
         fingerPrint.start()
-#        syncFingerPrint.start()
+        syncFingerPrint.start()
 #        rfSensor.start()
 #        checkToKill.start()
         
         fingerPrint.join()
-#        syncFingerPrint.join()
+        syncFingerPrint.join()
 #        rfSensor.join()
 #        checkToKill.join()
         
