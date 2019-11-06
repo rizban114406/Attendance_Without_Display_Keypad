@@ -256,7 +256,7 @@ class sasAllAPI:
     def confirmSyncStatusReceived(self,hardwareId):
         try:
             mainURL = self.mainURL + "update_sync_status"
-            payload = {"hardwareId" : hardwareId }
+            payload = {"hardwareid" : hardwareId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
             output = json.loads(r.content)

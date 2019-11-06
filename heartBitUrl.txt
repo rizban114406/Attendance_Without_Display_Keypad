@@ -1,1 +1,1 @@
-http://103.108.147.49/SAS/public/api/server_heartbit
+http://sas.aqualinkbd.com/sas-test/api/server_heartbit

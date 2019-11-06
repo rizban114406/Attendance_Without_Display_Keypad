@@ -281,13 +281,25 @@ class sasDatabase:
         self.databaseCommit(database)
         
     def deleteFromEventListTable(self,Id,database):
-        curs = database.cursor()
-        curs.execute("Delete FROM eventListTable WHERE id = ?",(Id))
-        self.databaseCommit(database)
+        try:
+            curs = database.cursor()
+            curs.execute("Delete FROM eventListTable WHERE id = ?",(int(Id),))
+            self.databaseCommit(database)
+        except Exception:
+            fileObject.updateExceptionMessage("sasDatabase{deleteFromEventListTable}: ",str(e))
 
-    def getAllEventData(self,startTime,database):
+#    def getAllEventData(self,startTime,database):
+#        curs = database.cursor()
+#        curs.execute("SELECT * From eventListTable WHERE startTime = ?",(startTime,))
+#        desiredDetails = curs.fetchall()
+#        print(desiredDetails)
+#        if desiredDetails != None:
+#            return desiredDetails
+#        return []
+    
+    def getAllEventData(self,database):
         curs = database.cursor()
-        curs.execute("SELECT * From eventListTable WHERE startTime = ?",(startTime,))
+        curs.execute("SELECT * From eventListTable")
         desiredDetails = curs.fetchall()
         print(desiredDetails)
         if desiredDetails != None:
@@ -355,7 +367,7 @@ class sasDatabase:
         else:
             curs.execute("Delete FROM employeeCardInfo \
                           WHERE uniqueId = ? and cardNumber = ?", \
-                         (int(uniqueId),int(cardNumber)))
+                         (int(uniqueId),int(cardNumber),))
             
         self.databaseCommit(database)
 

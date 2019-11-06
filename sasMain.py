@@ -12,9 +12,15 @@ import serial
 import pusher as push
 import json
 import RPi.GPIO as GPIO
+
+greenLightPin = 13
+redLightPin = 21
+buzzerPin = 27
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(20, GPIO.OUT)
-GPIO.setup(21, GPIO.OUT)
+GPIO.setup(greenLightPin, GPIO.OUT)
+GPIO.setup(redLightPin, GPIO.OUT)
+GPIO.setup(buzzerPin, GPIO.OUT)
+
 
 from pyfingerprint.pyfingerprint import PyFingerprint
 
@@ -474,20 +480,20 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
             if fingerInput == "Finger Matched" :
                 status = createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,database)
                 if status == "1":
-                    GPIO.output(20, 1)
+                    GPIO.output(greenLightPin, 1)
                     sendPusherCommand(hardwareId,"REGISTED_SUCCESSFULLY",requestId)
                     fileObject.updateRequestId("0")
                     print("Registered Successfuly")
                     t.sleep(1)
-                    GPIO.output(20, 0)
+                    GPIO.output(greenLightPin, 0)
                     #GPIO INDICATOR
                 else:
-                    GPIO.output(21, 1)
+                    GPIO.output(redLightPin, 1)
                     sendPusherCommand(hardwareId,"NOT_REGISTED_SUCCESSFULLY",requestId)
                     fileObject.updateRequestId("0")
                     print("Registered Unsuccessfuly")
                     t.sleep(1)
-                    GPIO.output(21, 0)
+                    GPIO.output(redLightPin, 0)
             else:
                 fileObject.updateRequestId("0")
         else:
@@ -499,12 +505,22 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
          fileObject.updateRequestId("0")
          sendPusherCommand(hardwareId,"TIME_OUT",requestId)
 
+def turnOnBuzzer(access):
+    GPIO.output(buzzerPin, 1)
+    if access == 1:
+        t.sleep(.5)
+    else:
+        t.sleep(1)
+    GPIO.output(buzzerPin, 0)
+    
 def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):
     currentDateTime,currentTime = checkCurrentDateTime()
     if attendanceFlag == '2':
         employeeDetails = dbObject.getEmployeeDetailsFromCard(employeeCardorFingerNumber,database)
+        print("Punched Employee ID: {}".format(employeeDetails))
         if employeeDetails == '0':
-            GPIO.output(21, 1)
+            print("No Card Record Found")
+            GPIO.output(redLightPin, 1)
             dbObject.insertEventTime("0",\
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
@@ -512,9 +528,12 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      '0',\
                                      startTime,\
                                      database)
-            GPIO.output(21, 0)
+            turnOnBuzzer(0)
+            t.sleep(1)
+            GPIO.output(redLightPin, 0)
         else :
-            GPIO.output(20, 1)
+            print("Card Record Found")
+            GPIO.output(greenLightPin, 1)
             dbObject.insertEventTime(employeeDetails[1],\
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
@@ -522,10 +541,14 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      employeeDetails[3],\
                                      startTime,\
                                      database)
-            GPIO.output(20, 0)
+            turnOnBuzzer(1)
+            t.sleep(1)
+            GPIO.output(greenLightPin, 0)
     elif attendanceFlag == '1':
         employeeDetails = dbObject.getEmployeeDetails(employeeCardorFingerNumber,database)
+        print("Punched Employee ID: {}".format(employeeDetails))
         if employeeDetails != '0':
+            print("Finger Record Found")
             dbObject.insertEventTime(employeeDetails[1], \
                                      employeeCardorFingerNumber, \
                                      currentDateTime, \
@@ -533,10 +556,17 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      employeeDetails[3], \
                                      startTime,\
                                      database)
-            GPIO.output(20, 1)
-            GPIO.output(20, 0)
+            GPIO.output(greenLightPin, 1)
+            turnOnBuzzer(1)
+            t.sleep(1)
+            GPIO.output(greenLightPin, 0)
             return 1
         else:
+            print("No Finger Record Found")
+            GPIO.output(redLightPin, 1)
+            turnOnBuzzer()
+            t.sleep(1)
+            GPIO.output(redLightPin, 0)
             return 0
        
 def matchFingerPrint(f,dbObject,database):
@@ -546,8 +576,11 @@ def matchFingerPrint(f,dbObject,database):
         positionNumber = result[0]
         print(positionNumber)
         if (positionNumber == -1):
-            GPIO.output(21, 1)
-            GPIO.output(21, 0)
+            print("No Finger Record Found")
+            GPIO.output(redLightPin, 1)
+            turnOnBuzzer(0)
+            t.sleep(1)
+            GPIO.output(redLightPin, 0)
         else:
             fingerFlag = createEventLogg(positionNumber,'1',dbObject,database)
             if fingerFlag == 0:
@@ -660,17 +693,17 @@ if __name__ == '__main__':
         f = configureFingerPrint()
         fingerPrint = threading.Thread(target = workWithFingerPrintSensor,args = (f,))
         syncFingerPrint = threading.Thread(target = syncronizationProcess)
-#        rfSensor = threading.Thread(target = workWithRFSensor)
+        rfSensor = threading.Thread(target = workWithRFSensor)
 #        checkToKill = threading.Thread(target = functionKillProgram)
         
         fingerPrint.start()
         syncFingerPrint.start()
-#        rfSensor.start()
+        rfSensor.start()
 #        checkToKill.start()
         
         fingerPrint.join()
         syncFingerPrint.join()
-#        rfSensor.join()
+        rfSensor.join()
 #        checkToKill.join()
         
     
