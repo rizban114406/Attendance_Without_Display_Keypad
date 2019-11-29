@@ -128,3 +128,16 @@ class sasFile:
         file.write(str(data))
         file.close()
         
+        
+        
+    def readWifiSettings(self):
+        file = open('/etc/wpa_supplicant/wpa_supplicant','r')
+        lines = file.readlines()
+        file.close()
+        return lines
+    
+    def writeWifiSettings(self,lines):
+        file = open('/etc/wpa_supplicant/wpa_supplicant','w')
+        file.writelines(lines)
+        file.close()
+        
