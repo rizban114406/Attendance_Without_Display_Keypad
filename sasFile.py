@@ -131,13 +131,24 @@ class sasFile:
         
         
     def readWifiSettings(self):
-        file = open('/etc/wpa_supplicant/wpa_supplicant','r')
+        file = open('/etc/wpa_supplicant/wpa_supplicant.conf','r')
         lines = file.readlines()
         file.close()
         return lines
     
     def writeWifiSettings(self,lines):
-        file = open('/etc/wpa_supplicant/wpa_supplicant','w')
+        file = open('/etc/wpa_supplicant/wpa_supplicant.conf','w')
+        file.writelines(lines)
+        file.close()
+        
+     def readEthernetSettings(self):
+        file = open('/etc/dhcpcd.conf','r')
+        lines = file.readlines()
+        file.close()
+        return lines
+    
+    def writeEthernetSettings(self,lines):
+        file = open('/etc/dhcpcd.conf','w')
         file.writelines(lines)
         file.close()
         
