@@ -128,7 +128,18 @@ class sasFile:
         file.write(str(data))
         file.close()
         
-        
+    
+    def readCurrentVersion(self):
+        file = open('currentVersion.txt', 'r')
+        version = file.readline()
+        version = version.replace('\n','')
+        file.close()
+        return float(version)
+    
+    def updateCurrentVersion(self,version):
+        file = open('currentVersion.txt', 'w')
+        file.write(version)
+        file.close()    
         
     def readWifiSettings(self):
         file = open('/etc/wpa_supplicant/wpa_supplicant.conf','r')
@@ -141,7 +152,7 @@ class sasFile:
         file.writelines(lines)
         file.close()
         
-     def readEthernetSettings(self):
+    def readEthernetSettings(self):
         file = open('/etc/dhcpcd.conf','r')
         lines = file.readlines()
         file.close()

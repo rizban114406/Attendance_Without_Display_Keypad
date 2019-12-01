@@ -65,7 +65,7 @@ lock = threading.Lock()
 startTime = fileObject.readStartTime()
 
 from sasAllAPI import sasAllAPI
-apiObject = sasAllAPI()
+apiObject = sasAllAPI(2)
 REQUESTTIMEOUT = 5
 ENROLLMENTTIMEOUT = 150
 def configureFingerPrint():
@@ -90,28 +90,24 @@ def checkCurrentDateTime():
     return (currentDateTime,currentTime)
 
 def createNewTemplateToSync(f,employeeInfo,dbObject,database):
-    x = str(employeeInfo[5]).split('-')
+    x = str(employeeInfo[3]).split('-')
     characteristics = []
     for i in range(0,len(x)-1):
         characteristics.append(int(x[i]))
     f.uploadCharacteristics(0x01,characteristics)
-    f.storeTemplate(int(employeeInfo[4]),0x01)
-    import re
-    sp = re.split(' |-|',str(employeeInfo[1]))
-    if(len(sp) == 2):
-        employee = sp[1]
-    else:
-        employee = sp[0]
+    f.storeTemplate(int(employeeInfo[2]),0x01)
+#    import re
+#    sp = re.split(' |-|',str(employeeInfo[1]))
+#    if(len(sp) == 2):
+#        employee = sp[1]
+#    else:
+#        employee = sp[0]
 
     dbObject.insertNewEmployee(employeeInfo[1], \
                                employeeInfo[2], \
-                               employeeInfo[3], \
-                               employeeInfo[4], \
                                employeeInfo[5], \
-                               employeeInfo[7], \
-                               employee, \
                                database)
-    dbObject.deleteFromTempTableToSync(employeeInfo[2],employeeInfo[4],database)
+    dbObject.deleteFromTempTableToSync(employeeInfo[1],employeeInfo[2],database)
         
 
 def updateListOfUsedTemplates(f):
@@ -163,10 +159,10 @@ def syncUsersToSensor(f,dbObject,database):
                 dbObject.deleteFromTempTableToSync(reading[0],reading[1],database)
                 t.sleep(.3)
             for reading in getDataToSync:
-                prevId = dbObject.checkEmployeeInfoTableToDelete(reading[2],reading[4],database)
+                prevId = dbObject.checkEmployeeInfoTableToDelete(reading[1],reading[2],database)
                 if prevId > 0:
                     f.deleteTemplate(prevId)
-                    dbObject.deleteFromEmployeeInfoTable(reading[2],reading[4],database)
+                    dbObject.deleteFromEmployeeInfoTable(reading[1],reading[2],database)
                 createNewTemplateToSync(f,reading,dbObject,database)
                 t.sleep(.3)
             updateListOfUsedTemplates(f)
@@ -196,9 +192,7 @@ def getRFCardInformation(dbObject,database):
             if(len(receivedDataSync['data']) > 0 or len(receivedDataSync['delete_request_enrollment']) > 0):
                 for data in receivedDataSync['data']:
                     # print (data['uniqueid']," ",data['companyid'])
-                    dbObject.insertIntoEmployeeCardInfoTable(data['employeeid'],\
-                                                             data['uniqueid'],\
-                                                             data['firstname'],\
+                    dbObject.insertIntoEmployeeCardInfoTable(data['uniqueid'],\
                                                              data['cardnumber'],\
                                                              data['companyid'],\
                                                              database)
@@ -230,19 +224,15 @@ def getFingerprintInformation(dbObject,database):
             if(len(receivedDataSync['data']) > 0 or len(receivedDataSync['delete_request_enrollment']) > 0):
                 dbObject.createTableTempTableToSync(database)
                 for data in receivedDataSync['data']:
-                    dbObject.insertToTempTableToSync(data['employeeid'],\
-                                                         data['uniqueid'],\
-                                                         data['firstname'],\
-                                                         data['fingernumber'],\
-                                                         data['matrix'],\
-                                                         '1',\
-                                                         data['companyid'],\
-                                                         database)
+                    dbObject.insertToTempTableToSync(data['uniqueid'],\
+                                                     data['fingernumber'],\
+                                                     data['matrix'],\
+                                                     '1',\
+                                                     data['companyid'],\
+                                                     database)
                     t.sleep(0.1)
                 for data in receivedDataSync['delete_request_enrollment']:
-                    dbObject.insertToTempTableToSync("N",\
-                                                     data['uniqueid'],\
-                                                     "N",\
+                    dbObject.insertToTempTableToSync(data['uniqueid'],\
                                                      data['fingernumber'],\
                                                      "N",\
                                                      '3',\
@@ -454,11 +444,7 @@ def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,da
         f.storeTemplate(int(receivedData[1][3]),0x01)
         dbObject.insertNewEmployee(receivedData[1][0], \
                                    receivedData[1][1], \
-                                   receivedData[1][2], \
-                                   receivedData[1][3], \
-                                   matrix, \
                                    selectedCompany, \
-                                   employeeId, \
                                    database)
         return "1"
     else:
@@ -526,7 +512,6 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      currentDateTime,\
                                      attendanceFlag,\
                                      '0',\
-                                     startTime,\
                                      database)
             turnOnBuzzer(0)
             t.sleep(1)
@@ -534,12 +519,11 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
         else :
             print("Card Record Found")
             GPIO.output(greenLightPin, 1)
-            dbObject.insertEventTime(employeeDetails[1],\
+            dbObject.insertEventTime(employeeDetails[0],\
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
                                      attendanceFlag,\
-                                     employeeDetails[3],\
-                                     startTime,\
+                                     employeeDetails[1],\
                                      database)
             turnOnBuzzer(1)
             t.sleep(1)
@@ -549,12 +533,11 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
         print("Punched Employee ID: {}".format(employeeDetails))
         if employeeDetails != '0':
             print("Finger Record Found")
-            dbObject.insertEventTime(employeeDetails[1], \
+            dbObject.insertEventTime(employeeDetails[0], \
                                      employeeCardorFingerNumber, \
                                      currentDateTime, \
                                      attendanceFlag, \
-                                     employeeDetails[3], \
-                                     startTime,\
+                                     employeeDetails[1], \
                                      database)
             GPIO.output(greenLightPin, 1)
             turnOnBuzzer(1)

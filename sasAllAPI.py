@@ -4,18 +4,14 @@ from sasFile import sasFile
 from sasDatabase import sasDatabase
 fileObject = sasFile()
 class sasAllAPI:
-    dbObject = sasDatabase()
-    database = dbObject.connectDataBase()
-    ipAddress = ""
-    baseURL = ""
-    mainURL = ""
-    
-    def __init__(self):
-        desiredDetails = self.dbObject.getAllConfigurationDetails(self.database)
+    def __init__(self, locationType):
+        dbObject = sasDatabase()
+        database = dbObject.connectDataBase()
+        desiredDetails = dbObject.getAllConfigurationDetails(locationType,database)
         self.ipAddress = desiredDetails[1]
         self.baseURL = desiredDetails[2]
         self.mainURL = "http://" + self.ipAddress + self.baseURL
-        self.dbObject.databaseClose(self.database)
+        dbObject.databaseClose(database)
 
     def checkServerStatus(self,employeeId,selectedCompany):
         try:
@@ -49,9 +45,7 @@ class sasAllAPI:
             print("Data Received {}".format(r.content))
             output = json.loads(r.content)
             if (output['status'] == 'success'):
-                receivedData.append(output['data']['employeeid'])
                 receivedData.append(output['data']['uniqueid'])
-                receivedData.append(output['data']['firstname'])
                 receivedData.append(output['data']['fingernumber'])
                 return ("Success",receivedData)
             else:
@@ -59,6 +53,20 @@ class sasAllAPI:
         except Exception as e:
             fileObject.updateExceptionMessage("sasAllAPI{getFingerId}",str(e))
             return ("Server Error","")
+        
+    def getServerStatus(self):
+        try:
+            mainURL = self.mainURL + "server_heartbit"
+            r = requests.get(mainURL,timeout = 5)
+            print("Data Received {}".format(r.content))
+            status = r.status_code
+            if (status == 200):
+                return 1
+            else:
+                return 0
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasAllAPI{getServerStatus}: ",str(e))
+            return 0
 
     def sendEventData(self,mainData):
         try:
@@ -263,6 +271,23 @@ class sasAllAPI:
             print("Data Received {}".format(r.content))
             if (output['status'] == "success"):
                 return '1'
+            else:
+                return '0'
+        
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
+            return "Server Error"
+        
+    def getAllConfigurationDetails(self, deviceId):
+        try:
+            mainURL = self.mainURL + "update_sync_status"
+            payload = {"deviceid" : deviceId }
+            print("Data To Be Sent: {}".format(payload))
+            r = requests.post(mainURL, data = payload,timeout = 3)
+            output = json.loads(r.content)
+            print("Data Received {}".format(r.content))
+            if (output['status'] == "success"):
+                return output['data']
             else:
                 return '0'
         

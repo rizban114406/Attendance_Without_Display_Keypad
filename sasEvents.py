@@ -14,27 +14,27 @@ if __name__ == '__main__':
                               "address"    : deviceInfo[4],\
                               "subaddress" : deviceInfo[5]}
             eventInfoData =[]
-            id_count = []
+            date_count = []
             for reading in allEventData:
-                id_count.append(reading[0])
-                eventInfoData.append({"eventdatetime"       : str(reading[3]),\
-                                      "uniqueid"            : str(reading[1]), \
-                                      "fingerorcardnumber"  : str(reading[2]),\
-                                      "eventtype"           : str(reading[4]) , \
-                                      "companyid"           : str(reading[5])})
+                date_count.append(reading[2])
+                eventInfoData.append({"eventdatetime"       : str(reading[2]),\
+                                      "uniqueid"            : str(reading[0]), \
+                                      "fingerorcardnumber"  : str(reading[1]),\
+                                      "eventtype"           : str(reading[3]) , \
+                                      "companyid"           : str(reading[4])})
             mainData = {"deviceinfo" : deviceInfoData, \
                         "eventdata"  : eventInfoData}
                 
             if(len(allEventData) > 0):       
-                apiObject = sasAllAPI()
+                apiObject = sasAllAPI(2)
                 message = apiObject.sendEventData(mainData)
                 print(message)
                 if message == "Success":
                     print("Sent Successfully")
-                    print(id_count)
-                    for Id in id_count :
-                        print(Id)
-                        dbObject.deleteFromEventListTable(Id,database)
+                    print(date_count)
+                    for date in date_count :
+                        print(date)
+                        dbObject.deleteFromEventListTable(date,database)
                 elif message == "Not Successfull":
                     print("Something Went Wrong")
                 else:

@@ -4,8 +4,34 @@ Created on Fri Nov 29 22:38:17 2019
 
 @author: User
 """
+
+from sasDatabase import sasDatabase
+
 from sasFile import sasFile
 fileObject = sasFile()
+from sasAllAPI import sasAllAPI
+apiObjectPrimary = sasAllAPI(1)
+apiObjectSecondary = sasAllAPI(2)
+
+def getHardwareId():
+    cpuserial = ""
+    try:
+        f = open('/proc/cpuinfo','r')
+        for line in f:
+            if line[0:6]=='Serial':
+                cpuserial = line[10:26]
+        f.close()
+    except Exception as e:
+        fileObject.updateExceptionMessage("sasGetConfiguration{getHardwareId}",str(e))
+        cpuserial = "Error"
+    return cpuserial
+
+def getIpAddress():
+    ip =  commands.getoutput('hostname -I')
+    return ip
+
+hardwareId = getHardwareId()
+osVersion = fileObject.readCurrentVersion()
 
 def setWIFINetworkConfiguration(wifiSettings):
     try: 
@@ -43,7 +69,33 @@ def setEthernetConfiguration(staticIPInfo):
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{setEthernetConfiguration}: ",str(e))
         return 0
+    
+try:
+    dbObject = sasDatabase()
+    database = dbObject.connectDataBase()
+except Exception as e:
+    fileObject.updateExceptionMessage("sasGetALLConfiguration{DB Error}: ",str(e))
+#    myCommands()
+    dbObject = sasDatabase()
+    database = dbObject.connectDataBase()    
 
 if __name__ == '__main__':
-    
+    deviceInfoRowNum = dbObject.countDeviceInfoTable(database)
+    if deviceInfoRowNum == 0:
+        if(apiObjectPrimary.checkServerStatus() == 1):
+            ipAddress = getIpAddress()
+            receivedData = apiObjectPrimary.createDevice(hardwareId,osVersion)
+            if receivedData != '0' and receivedData != "Server Error":
+                dbObject.insertIntoDeviceInfoTable(hardwareId,receivedData['id'],osVersion,ipAddress)
+            else:
+                print("Device Entry Not Successful")
+    else:
+        deviceId = dbObject.getDeviceId(database)
+        if (dbObject.checkAddressUpdateRequired(1, database)):
+            if(apiObjectPrimary.checkServerStatus() == 1):
+                requiredDetils = apiObjectPrimary.getAllConfigurationDetails(deviceId)
+                if requiredDetils != '0' and requiredDetils != "Server Error":
+                    
+                
+        
     
