@@ -493,12 +493,36 @@ class sasDatabase:
         
     def checkAddressUpdateRequired(self, locationType, database):
         curs = database.cursor()
-        curs.execute ("SELECT updateRequired FROM configurationTable WHERE id = ? and updateRequired = '0'",(locationType,)) #1=primary, 2=seondary
+        curs.execute ("SELECT updateRequired FROM configurationTable WHERE id = ? and updateRequired = '0' and serverUpdated = '1'",(locationType,)) #1=primary, 2=seondary
         desiredDetails = curs.fetchone()
         if (desiredDetails != None):
             return 1
         else:
             return 0
+        
+    def checkSecondaryAddressAvailable(self, database):
+        curs = database.cursor()
+        curs.execute ("SELECT * FROM configurationTable WHERE id = 2") #1=primary, 2=seondary
+        desiredDetails = curs.fetchone()
+        if (desiredDetails != None):
+            return 1
+        else:
+            return 0
+        
+    def updateConfigurationTable(self, baseURL, subURL, database):
+        curs = database.cursor()
+        if (baseURL is None):
+            baseURL = ""
+        if (subURL is None):
+            subURL = ""
+        curs.execute ("UPDATE configurationTable SET baseUrl = ?, \
+                                                     subUrl = ?, \
+                                                     updateRequired = '1',\
+                                                     serverUpdated = '1',\
+                                                     WHERE id = 2",\
+                                                    (baseURL,\
+                                                     subURL,))
+        self.databaseCommit(database)
         
         
         

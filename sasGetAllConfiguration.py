@@ -92,9 +92,22 @@ if __name__ == '__main__':
     else:
         deviceId = dbObject.getDeviceId(database)
         if (dbObject.checkAddressUpdateRequired(1, database)):
-            if(apiObjectPrimary.checkServerStatus() == 1):
+            if(apiObjectPrimary.checkServerStatus()):
                 requiredDetils = apiObjectPrimary.getAllConfigurationDetails(deviceId)
                 if requiredDetils != '0' and requiredDetils != "Server Error":
+                    deviceName = requiredDetils['devicename']
+                    companyId = requiredDetils['companyid']
+                    address = requiredDetils['address']
+                    subaddress = requiredDetils['subaddress']
+                    baseUrl = requiredDetils['baseurl']
+                    subUrl = requiredDetils['suburl']
+                    networkSettings = requiredDetils['networksettings']
+                    ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
+                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
+                    if (dbObject.checkSecondaryAddressAvailable(database)):
+                        dbObject.updateConfigurationTable(baseUrl,subUrl,database)
+                    else:
+                        dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
                     
                 
         
