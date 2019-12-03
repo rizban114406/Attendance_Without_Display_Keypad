@@ -6,7 +6,7 @@ Created on Fri Nov 29 22:38:17 2019
 """
 
 from sasDatabase import sasDatabase
-
+import commands
 from sasFile import sasFile
 fileObject = sasFile()
 from sasAllAPI import sasAllAPI
@@ -36,6 +36,7 @@ osVersion = fileObject.readCurrentVersion()
 def setWIFINetworkConfiguration(wifiSettings):
     try: 
         lines = fileObject.readWifiSettings()
+        dbObject.createTableWifiSettings(database)
         for settings in wifiSettings:
             lines.insert(len(lines),"network={\n")
             ssid = "ssid="+ '"' + settings["ssid"] + '"' + "\n"
@@ -46,6 +47,7 @@ def setWIFINetworkConfiguration(wifiSettings):
             priority = "priority="+ '"' + settings["priority"] + '"' + "\n"
             lines.insert(len(lines), priority)
             lines.insert(len(lines), "}\n")
+            dbObject.insertIntoWifiSettingsTable(settings["ssid"], settings["password"], settings["priority"], database)
         fileObject.writeWifiSettings(lines)
         return 1
     except Exception as e:
@@ -108,6 +110,38 @@ if __name__ == '__main__':
                         dbObject.updateConfigurationTable(baseUrl,subUrl,database)
                     else:
                         dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
+                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, database)
+                    if (deviceInfoUpdateStatus):
+                        dbObject.resetServerUpdatedStatus(2)
+        elif (dbObject.checkAddressUpdateRequired(2, database)):
+            if(apiObjectSecondary.checkServerStatus()):
+                requiredDetils = apiObjectSecondary.getAllConfigurationDetails(deviceId)
+                if requiredDetils != '0' and requiredDetils != "Server Error":
+                    deviceName = requiredDetils['devicename']
+                    companyId = requiredDetils['companyid']
+                    address = requiredDetils['address']
+                    subaddress = requiredDetils['subaddress']
+#                    baseUrl = requiredDetils['baseurl']
+#                    subUrl = requiredDetils['suburl']
+                    networkSettings = requiredDetils['networksettings']
+                    ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
+                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
+#                    if (dbObject.checkSecondaryAddressAvailable(database)):
+#                        dbObject.updateConfigurationTable(baseUrl,subUrl,database)
+#                    else:
+#                        dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
+                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, database)
+                    if (deviceInfoUpdateStatus):
+                        dbObject.resetServerUpdatedStatus(1)
+        elif (dbObject.checkServerUpdateStatus(1, database)):
+            deviceDetails = dbObject.getAllDeviceInfo(database)
+            serverInfo = dbObject.getSecondaryAddressInfo(database)
+            
+            
+        
+            
+                        
+                    
                     
                 
         

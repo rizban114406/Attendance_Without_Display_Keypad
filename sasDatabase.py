@@ -493,7 +493,16 @@ class sasDatabase:
         
     def checkAddressUpdateRequired(self, locationType, database):
         curs = database.cursor()
-        curs.execute ("SELECT updateRequired FROM configurationTable WHERE id = ? and updateRequired = '0' and serverUpdated = '1'",(locationType,)) #1=primary, 2=seondary
+        curs.execute ("SELECT updateRequired FROM configurationTable WHERE id = ? and updateRequired = '0'",(locationType,)) #1=primary, 2=seondary
+        desiredDetails = curs.fetchone()
+        if (desiredDetails != None):
+            return 1
+        else:
+            return 0
+        
+    def checkServerUpdateStatus(self, locationType, database):
+        curs = database.cursor()
+        curs.execute ("SELECT serverUpdated FROM configurationTable WHERE id = ? and serverUpdated = '0'",(locationType,)) #1=primary, 2=seondary
         desiredDetails = curs.fetchone()
         if (desiredDetails != None):
             return 1
@@ -508,6 +517,15 @@ class sasDatabase:
             return 1
         else:
             return 0
+        
+    def getSecondaryAddressInfo(self, database):
+        curs = database.cursor()
+        curs.execute ("SELECT * FROM configurationTable WHERE id = 2") #1=primary, 2=seondary
+        desiredDetails = curs.fetchone()
+        if (desiredDetails != None):
+            return desiredDetails
+        else:
+            return '0'
         
     def updateConfigurationTable(self, baseURL, subURL, database):
         curs = database.cursor()
@@ -524,27 +542,11 @@ class sasDatabase:
                                                      subURL,))
         self.databaseCommit(database)
         
-        
-        
-        
-
-    def updateOSVersion(self,deviceOSVersion,database):
+    def resetServerUpdatedStatus(self,locationType,database):
         curs = database.cursor()
-        curs.execute ("UPDATE configurationTable SET deviceOSVersion = ? \
-                                                     WHERE id = 1",\
-                                                    (deviceOSVersion))
-        self.databaseCommit(database)
-    def updateBaseUrl(self,baseUrl,database):
-        curs = database.cursor()
-        curs.execute ("UPDATE configurationTable SET baseUrl = ? \
-                                                     WHERE id = 1",\
-                                                    (baseUrl))
-        self.databaseCommit(database)
-    def updateSubUrl(self,subUrl,database):
-        curs = database.cursor()
-        curs.execute ("UPDATE configurationTable SET subUrl = ? \
-                                                     WHERE id = 1",\
-                                                    (subUrl))
+        curs.execute ("UPDATE configurationTable SET serverUpdated = 0 \
+                                                     WHERE id = ?",\
+                                                    (locationType,))
         self.databaseCommit(database)
     
     ####################### All Functions Regarding Configuration Info Table ###################
@@ -621,12 +623,7 @@ class sasDatabase:
             return int(desiredDetails[0])
         else:
             return 0
-        
-        
-        
-        
-        
-
+    
     def getAllDeviceInfo(self,database):
         curs = database.cursor()
         curs.execute ("SELECT * FROM deviceInfoTable WHERE id = 1")
@@ -636,100 +633,132 @@ class sasDatabase:
             return desiredDetails
         else:
             return '0'
-
-    def updateIPAddress(self,ipAddress,database):
-        curs = database.cursor()
-        curs.execute ("UPDATE deviceInfoTable SET ipAddress = ? \
-                                                  WHERE id = 1",\
-                                                  (ipAddress))
-        self.databaseCommit(database)
-
-    def updateDeviceInfoTable(self,deviceInfo,\
+    
+    def updateDeviceInfoTable(self,deviceName,\
+                              address,\
+                              subAddress,\
                               ipAddress,\
+                              companyId,\
                               database):
         curs = database.cursor()
-        if (deviceInfo['company_id'] is None):
-            deviceInfo['company_id'] = ""
-        if (deviceInfo['office_address'] is None):
-            deviceInfo['office_address'] = ""
-        if (deviceInfo['office_sub_address'] is None):
-            deviceInfo['office_sub_address'] = ""
+        if (deviceName is None):
+            deviceName = ""
+        if (address is None):
+            address = ""
+        if (subAddress is None):
+            subAddress = ""
+        if (companyId is None):
+            companyId = ""
         try:
-            curs.execute ("UPDATE deviceInfoTable SET companyId = ?, \
-                                                  address = ?, \
-                                                  subAddress = ?, \
-                                                  ipAddress = ? \
-                                                  WHERE id = 1",\
-                                                  (str(deviceInfo['company_id']),\
-                                                   str(deviceInfo['office_address']),\
-                                                   str(deviceInfo['office_sub_address']),\
-                                                   str(ipAddress)))
+            curs.execute ("UPDATE deviceInfoTable SET deviceName = ?, \
+                                                      address = ?, \
+                                                      subAddress = ?, \
+                                                      ipAddress = ? \
+                                                      companyId = ? \
+                                                      WHERE id = 1",\
+                                                      (str(deviceName),\
+                                                       str(address),\
+                                                       str(subAddress),\
+                                                       str(ipAddress),\
+                                                       str(companyId),))
             self.databaseCommit(database)
+            return 1
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{updateDeviceInfoTable}",str(e))
+            return 0
         
     ####################### All Functions Regarding Device Info Table ###################
-    def createTableTimeConfig(self,database):
+    
+#    def createTableTimeConfig(self,database):
+#        curs = database.cursor()
+#        try:      
+#            curs.execute("DROP TABLE timeConfig")
+#            self.databaseCommit(database)
+#            t.sleep(1)
+#        except Exception:
+#            print("Does not Exists")
+#        curs.execute("CREATE TABLE timeConfig(startTime   DATETIME,\
+#                                              restartTime DATETIME,\
+#                                              duration    TEXT)")
+#        self.databaseCommit(database)
+#    
+#    def insertIntoTimeConfig(self, startTime, database):
+#        curs = database.cursor()
+#        curs.execute("INSERT INTO timeConfig(startTime,\
+#                                             restartTime,\
+#                                             duration) VALUES (?,"","")",\
+#                                             (startTime))
+#        self.databaseCommit(database)
+#        
+#    def updateRestartTimeConfig(self, startTime, restartTime, database):
+#        curs = database.cursor()
+#        curs.execute ("UPDATE timeConfig SET restartTime = ? \
+#                       WHERE startTime = ?",(startTime, restartTime))
+#        self.databaseCommit(database)
+#    
+#    def updateDurationTimeConfig(self, startTime, duration, database):
+#        curs = database.cursor()
+#        curs.execute ("UPDATE timeConfig SET duration = ? \
+#                       WHERE startTime = ?",(str(duration), startTime))
+#        self.databaseCommit(database)
+#    
+#    def getRowWithNoDurationTimeConfig(self,database):
+#        curs = database.cursor()
+#        curs.execute ("SELECT startTime, restartTime FROM timeConfig WHERE duration = """)
+#        desiredDetails = curs.fetchall()
+#        print(desiredDetails)
+#        if (desiredDetails != None):
+#            return desiredDetails
+#        else:
+#            return '0'
+#    
+#    def getDataTimeConfig(self,database):
+#        curs = database.cursor()
+#        curs.execute ("SELECT * FROM timeConfig WHERE duration != """)
+#        desiredDetails = curs.fetchall()
+#        print(desiredDetails)
+#        if (desiredDetails != None):
+#            return desiredDetails
+#        else:
+#            return '0'
+#    
+#    def deleteFromTimeConfig(self,startTime,database): # Delete From Employee Infromation Table After Deleting Employee
+#        curs = database.cursor()
+#        curs.execute("Delete FROM timeConfig \
+#                      WHERE startTime = ?",(startTime))
+#        self.databaseCommit(database)
+     
+    ####################### All Functions Regarding Wifi Networks Info Table ###################
+    
+    def createTableWifiSettings(self,database):
         curs = database.cursor()
         try:      
-            curs.execute("DROP TABLE timeConfig")
+            curs.execute("DROP TABLE wifiSettings")
             self.databaseCommit(database)
             t.sleep(1)
         except Exception:
             print("Does not Exists")
-        curs.execute("CREATE TABLE timeConfig(startTime   DATETIME,\
-                                              restartTime DATETIME,\
-                                              duration    TEXT)")
-        self.databaseCommit(database)
-    
-    def insertIntoTimeConfig(self, startTime, database):
-        curs = database.cursor()
-        curs.execute("INSERT INTO timeConfig(startTime,\
-                                             restartTime,\
-                                             duration) VALUES (?,"","")",\
-                                             (startTime))
+        curs.execute("CREATE TABLE wifiSettings(id        INTEGER PRIMARY KEY AUTOINCREMENT,\
+                                                ssid      TEXT,\
+                                                password  INTEGER,\
+                                                priority  DOUBLE)")
         self.databaseCommit(database)
         
-    def updateRestartTimeConfig(self, startTime, restartTime, database):
+    def insertIntoWifiSettingsTable(self,ssid,\
+                                    password,\
+                                    priority,\
+                                    database):
         curs = database.cursor()
-        curs.execute ("UPDATE timeConfig SET restartTime = ? \
-                       WHERE startTime = ?",(startTime, restartTime))
-        self.databaseCommit(database)
-    
-    def updateDurationTimeConfig(self, startTime, duration, database):
-        curs = database.cursor()
-        curs.execute ("UPDATE timeConfig SET duration = ? \
-                       WHERE startTime = ?",(str(duration), startTime))
-        self.databaseCommit(database)
-    
-    def getRowWithNoDurationTimeConfig(self,database):
-        curs = database.cursor()
-        curs.execute ("SELECT startTime, restartTime FROM timeConfig WHERE duration = """)
-        desiredDetails = curs.fetchall()
-        print(desiredDetails)
-        if (desiredDetails != None):
-            return desiredDetails
-        else:
-            return '0'
-    
-    def getDataTimeConfig(self,database):
-        curs = database.cursor()
-        curs.execute ("SELECT * FROM timeConfig WHERE duration != """)
-        desiredDetails = curs.fetchall()
-        print(desiredDetails)
-        if (desiredDetails != None):
-            return desiredDetails
-        else:
-            return '0'
-    
-    def deleteFromTimeConfig(self,startTime,database): # Delete From Employee Infromation Table After Deleting Employee
-        curs = database.cursor()
-        curs.execute("Delete FROM timeConfig \
-                      WHERE startTime = ?",(startTime))
-        self.databaseCommit(database)
-        
-        
-        
+        try:
+            curs.execute("INSERT INTO wifiSettings(ssid,\
+                                                   password,\
+                                                   priority) VALUES (?,?,?)",\
+                                                   (str(ssid),\
+                                                    str(password),\
+                                                    float(priority),))
+            self.databaseCommit(database)
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasDatabase{insertIntoWifiSettingsTable}: ",str(e))
         
         
         
