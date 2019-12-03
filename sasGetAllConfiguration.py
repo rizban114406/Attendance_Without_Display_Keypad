@@ -4,7 +4,11 @@ Created on Fri Nov 29 22:38:17 2019
 
 @author: User
 """
-
+import urllib
+import tarfile
+from shutil import copyfile
+import os
+import struct
 from sasDatabase import sasDatabase
 import commands
 from sasFile import sasFile
@@ -32,6 +36,35 @@ def getIpAddress():
 
 hardwareId = getHardwareId()
 osVersion = fileObject.readCurrentVersion()
+
+def restart():
+    dbObject.databaseClose(database)
+    command = "/usr/bin/sudo /sbin/shutdown -r now"
+    import subprocess
+    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+    process.communicate()[0]
+
+def updateToNewCode(deviceCodeName,deviceCodeURL):
+    
+    downloadURL = "http://" + deviceCodeURL + deviceCodeName
+    try:
+        testfile = urllib.URLopener()     
+        testfile.retrieve(downloadURL, deviceCodeName)       
+        try:
+            tar = tarfile.open(deviceCodeName)
+            tar.extractall()
+            tar.close()
+        except struct.error as e:
+            fileObject.updateExceptionMessage("sasGetAllConfiguration{updateToNewCode 1}",str(e))
+        except tarfile.TarError as e:
+            fileObject.updateExceptionMessage("sasGetAllConfiguration{updateToNewCode 2}",str(e))
+        os.system('chmod 755 *')
+        if os.path.exists("/root/rc.local"):
+            copyfile("/root/rc.local", "/etc/rc.local")
+        return 1
+    except Exception as e:
+        fileObject.updateExceptionMessage("sasGetAllConfiguration{updateToNewCode}",str(e))
+        return 0
 
 def setWIFINetworkConfiguration(wifiSettings):
     try: 
@@ -97,6 +130,12 @@ if __name__ == '__main__':
             if(apiObjectPrimary.checkServerStatus()):
                 requiredDetils = apiObjectPrimary.getAllConfigurationDetails(deviceId)
                 if requiredDetils != '0' and requiredDetils != "Server Error":
+                    if float(requiredDetils['osversion']) > float(osVersion):
+                        codeUpdateFlag = updateToNewCode(str(requiredDetils['devicecodename']),\
+                                                         str(requiredDetils['devicecodeurl']))
+                        if codeUpdateFlag == 1:
+                            fileObject.updateCurrentVersion(requiredDetils['osversion'])
+                            restart()
                     deviceName = requiredDetils['devicename']
                     companyId = requiredDetils['companyid']
                     address = requiredDetils['address']
@@ -110,7 +149,7 @@ if __name__ == '__main__':
                         dbObject.updateConfigurationTable(baseUrl,subUrl,database)
                     else:
                         dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
-                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, database)
+                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, osVersion database)
                     if (deviceInfoUpdateStatus):
                         dbObject.resetServerUpdatedStatus(2)
         elif (dbObject.checkAddressUpdateRequired(2, database)):
@@ -130,7 +169,7 @@ if __name__ == '__main__':
 #                        dbObject.updateConfigurationTable(baseUrl,subUrl,database)
 #                    else:
 #                        dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
-                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, database)
+                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, osVersion, database)
                     if (deviceInfoUpdateStatus):
                         dbObject.resetServerUpdatedStatus(1)
         elif (dbObject.checkServerUpdateStatus(1, database)):

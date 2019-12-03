@@ -639,6 +639,7 @@ class sasDatabase:
                               subAddress,\
                               ipAddress,\
                               companyId,\
+                              deviceOSVersion,\
                               database):
         curs = database.cursor()
         if (deviceName is None):
@@ -653,14 +654,16 @@ class sasDatabase:
             curs.execute ("UPDATE deviceInfoTable SET deviceName = ?, \
                                                       address = ?, \
                                                       subAddress = ?, \
-                                                      ipAddress = ? \
-                                                      companyId = ? \
+                                                      ipAddress = ?, \
+                                                      companyId = ?, \
+                                                      deviceOSVersion = ?,\
                                                       WHERE id = 1",\
                                                       (str(deviceName),\
                                                        str(address),\
                                                        str(subAddress),\
                                                        str(ipAddress),\
-                                                       str(companyId),))
+                                                       str(companyId),\
+                                                       float(deviceOSVersion),))
             self.databaseCommit(database)
             return 1
         except Exception as e:
