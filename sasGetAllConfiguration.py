@@ -67,24 +67,38 @@ def updateToNewCode(deviceCodeName,deviceCodeURL):
         return 0
 
 def setWIFINetworkConfiguration(wifiSettings):
-    try: 
-        lines = fileObject.readWifiSettings()
-        dbObject.createTableWifiSettings(database)
-        i = lines.index('}\n')
+    try:
+        isChangeRequired = 0
         for settings in wifiSettings:
-            lines.insert(i+1,"network={\n")
-            ssid = "ssid="+ '"' + settings["ssid"] + '"' + "\n"
-            lines.insert(i+2, ssid)
-            password = "psk="+ '"' + settings["password"] + '"' + "\n"
-            lines.insert(i+3, password)
-            lines.insert(i+4,"key_mgmt=WPA-PSK\n")
-            priority = "priority="+ '"' + settings["priority"] + '"' + "\n"
-            lines.insert(i+5, priority)
-            lines.insert(i+6, "}\n")
-            i = i + 6
-            dbObject.insertIntoWifiSettingsTable(settings["ssid"], settings["password"], settings["priority"], database)
-        del lines[i+1:]
-        fileObject.writeWifiSettings(lines)
+            if(dbObject.checkWifiConfigsChange(settings["ssid"],\
+                                               settings["password"],\
+                                               settings["priority"],\
+                                               database)):
+                continue
+            else:
+                isChangeRequired = 1
+                break      
+        if isChangeRequired == 1:
+            lines = fileObject.readWifiSettings()
+            dbObject.createTableWifiSettings(database)
+            i = lines.index('}\n')
+            for settings in wifiSettings:
+                lines.insert(i+1,"network={\n")
+                ssid = "ssid="+ '"' + settings["ssid"] + '"' + "\n"
+                lines.insert(i+2, ssid)
+                password = "psk="+ '"' + settings["password"] + '"' + "\n"
+                lines.insert(i+3, password)
+                lines.insert(i+4,"key_mgmt=WPA-PSK\n")
+                priority = "priority="+ '"' + settings["priority"] + '"' + "\n"
+                lines.insert(i+5, priority)
+                lines.insert(i+6, "}\n")
+                i = i + 6
+                dbObject.insertIntoWifiSettingsTable(settings["ssid"], \
+                                                     settings["password"], \
+                                                     settings["priority"], \
+                                                     database)
+            del lines[i+1:]
+            fileObject.writeWifiSettings(lines)
         return 1
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{setWIFINetworkConfiguration}: ",str(e))
@@ -116,13 +130,60 @@ except Exception as e:
     dbObject = sasDatabase()
     database = dbObject.connectDataBase()
     
-def checkForFirmwareUpdate(requiredDetils):
-    if float(requiredDetils['osversion']) > float(osVersion):
-        codeUpdateFlag = updateToNewCode(str(requiredDetils['devicecodename']),\
-                                         str(requiredDetils['devicecodeurl']))
+def checkForFirmwareUpdate(runningOsVersion, deviceCodeUrl, deviceCodeName):
+    if float(runningOsVersion) > float(osVersion):
+        codeUpdateFlag = updateToNewCode(str(deviceCodeName),\
+                                         str(deviceCodeUrl))
         if codeUpdateFlag == 1:
-            fileObject.updateCurrentVersion(requiredDetils['osversion'])
+            fileObject.updateCurrentVersion(runningOsVersion)
             restart()
+            
+def checkForChangeinDeviceInfo(requiredDetils,deviceInfo):
+    try:
+        isChangeRequired = 0
+        if (requiredDetils['devicename'] is not None and requiredDetils['devicename'] != deviceInfo[4]):
+            isChangeRequired = 1
+        if (requiredDetils['address'] is not None and requiredDetils['address'] != deviceInfo[5]):
+            isChangeRequired = 1
+        if (requiredDetils['subaddress'] is not None and requiredDetils['subaddress'] != deviceInfo[6]):
+            isChangeRequired = 1
+        if (requiredDetils['companyid'] is not None and requiredDetils['companyid'] != int(deviceInfo[8])):
+            isChangeRequired = 1
+        if isChangeRequired == 1:
+            dbObject.updateDeviceInfoTable(requiredDetils['devicename'],\
+                                           requiredDetils['address'],\
+                                           requiredDetils['subaddress'],\
+                                           ipAddress, \
+                                           requiredDetils['companyid'],\
+                                           osVersion,\
+                                           database)
+        return 1
+    except Exception as e:
+        fileObject.updateExceptionMessage("sasGetAllConfiguration{checkForChangeinDeviceInfo}: ",str(e))
+        return 0
+    
+def checkForServerAddressInfo():
+    try:
+        if (requiredDetils['baseurl'] is not None and requiredDetils['baseurl'] is not None):    
+            if (dbObject.checkSecondaryAddressAvailable(database)):
+                confDetails = dbObject.getSecondaryAddressInfo(database)
+                isChangeRequired = 0
+                if (requiredDetils['baseurl'] != confDetails[1]):
+                    isChangeRequired = 1
+                if (requiredDetils['suburl'] != confDetails[2]):
+                    isChangeRequired = 1
+                if isChangeRequired == 1:
+                    dbObject.updateConfigurationTable(requiredDetils['baseurl'],\
+                                                      requiredDetils['suburl'],\
+                                                      database)
+            else:
+                dbObject.insertIntoConfigurationTable(requiredDetils['baseurl'],\
+                                                      requiredDetils['suburl'],\
+                                                      database)
+        return 1
+    except Exception as e:
+        fileObject.updateExceptionMessage("sasGetAllConfiguration{checkForServerAddressInfo}: ",str(e))
+        return 0
 
 if __name__ == '__main__':
     deviceInfoRowNum = dbObject.countDeviceInfoTable(database)
@@ -141,23 +202,41 @@ if __name__ == '__main__':
             if(apiObjectPrimary.checkServerStatus()):
                 requiredDetils = apiObjectPrimary.getAllConfigurationDetails(deviceId)
                 if requiredDetils != '0' and requiredDetils != "Server Error":
-                    checkForFirmwareUpdate(requiredDetils)
-                    deviceName = requiredDetils['devicename']
-                    companyId = requiredDetils['companyid']
-                    address = requiredDetils['address']
-                    subaddress = requiredDetils['subaddress']
-                    baseUrl = requiredDetils['baseurl']
-                    subUrl = requiredDetils['suburl']
+                    if ((requiredDetils['devicecodeurl'] is not None) and (requiredDetils['devicecodename'] is not None)):
+                        checkForFirmwareUpdate(requiredDetils['osversion'],\
+                                               requiredDetils['devicecodeurl'],\
+                                               requiredDetils['devicecodename'])
+                        
+                    deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
+                    configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
+                    
+                        
+                        
                     networkSettings = requiredDetils['networksettings']
                     ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
                     wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
-                    if (dbObject.checkSecondaryAddressAvailable(database)):
-                        dbObject.updateConfigurationTable(baseUrl,subUrl,database)
-                    else:
-                        dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
-                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, osVersion, database)
+                    
                     if (deviceInfoUpdateStatus):
+                        dbObject.setUpdatedRequiredStatus(1)
                         dbObject.resetServerUpdatedStatus(2)
+                elif requiredDetils == '1':
+                    dbObject.setUpdatedRequiredStatus(1)
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
         elif (dbObject.checkAddressUpdateRequired(2, database)):
             if(apiObjectSecondary.checkServerStatus()):
                 requiredDetils = apiObjectSecondary.getAllConfigurationDetails(deviceId)

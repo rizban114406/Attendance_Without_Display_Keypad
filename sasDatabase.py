@@ -768,7 +768,7 @@ class sasDatabase:
             print("Does not Exists")
         curs.execute("CREATE TABLE wifiSettings(id        INTEGER PRIMARY KEY AUTOINCREMENT,\
                                                 ssid      TEXT,\
-                                                password  INTEGER,\
+                                                password  TEXT,\
                                                 priority  DOUBLE)")
         self.databaseCommit(database)
         
@@ -787,6 +787,31 @@ class sasDatabase:
             self.databaseCommit(database)
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{insertIntoWifiSettingsTable}: ",str(e))
+        
+    def getWifiConfigs(self,database):
+        curs = database.cursor()
+        curs.execute ("SELECT * FROM wifiSettings")
+        desiredDetails = curs.fetchall()
+        print(desiredDetails)
+        if (desiredDetails != None):
+            return desiredDetails
+        else:
+            return '0'
+        
+    def checkWifiConfigsChange(self, ssid, password, priority, database):
+        curs = database.cursor()
+        curs.execute ("SELECT * FROM wifiSettings WHERE ssid = ? and \
+                                                        password = ? and \
+                                                        priority = ?",\
+                                                        (str(ssid),\
+                                                         str(password),\
+                                                         float(priority),))
+        desiredDetails = curs.fetchall()
+        print(desiredDetails)
+        if (desiredDetails != None):
+            return 1
+        else:
+            return 0
         
         
         
