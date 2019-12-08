@@ -70,17 +70,20 @@ def setWIFINetworkConfiguration(wifiSettings):
     try: 
         lines = fileObject.readWifiSettings()
         dbObject.createTableWifiSettings(database)
+        i = lines.index('}\n')
         for settings in wifiSettings:
-            lines.insert(len(lines),"network={\n")
+            lines.insert(i+1,"network={\n")
             ssid = "ssid="+ '"' + settings["ssid"] + '"' + "\n"
-            lines.insert(len(lines), ssid)
+            lines.insert(i+2, ssid)
             password = "psk="+ '"' + settings["password"] + '"' + "\n"
-            lines.insert(len(lines), password)
-            lines.insert(len(lines),"key_mgmt=WPA-PSK\n")
+            lines.insert(i+3, password)
+            lines.insert(i+4,"key_mgmt=WPA-PSK\n")
             priority = "priority="+ '"' + settings["priority"] + '"' + "\n"
-            lines.insert(len(lines), priority)
-            lines.insert(len(lines), "}\n")
+            lines.insert(i+5, priority)
+            lines.insert(i+6, "}\n")
+            i = i + 6
             dbObject.insertIntoWifiSettingsTable(settings["ssid"], settings["password"], settings["priority"], database)
+        del lines[i+1:]
         fileObject.writeWifiSettings(lines)
         return 1
     except Exception as e:
@@ -110,9 +113,16 @@ try:
     database = dbObject.connectDataBase()
 except Exception as e:
     fileObject.updateExceptionMessage("sasGetALLConfiguration{DB Error}: ",str(e))
-#    myCommands()
     dbObject = sasDatabase()
-    database = dbObject.connectDataBase()    
+    database = dbObject.connectDataBase()
+    
+def checkForFirmwareUpdate(requiredDetils):
+    if float(requiredDetils['osversion']) > float(osVersion):
+        codeUpdateFlag = updateToNewCode(str(requiredDetils['devicecodename']),\
+                                         str(requiredDetils['devicecodeurl']))
+        if codeUpdateFlag == 1:
+            fileObject.updateCurrentVersion(requiredDetils['osversion'])
+            restart()
 
 if __name__ == '__main__':
     deviceInfoRowNum = dbObject.countDeviceInfoTable(database)
@@ -126,16 +136,12 @@ if __name__ == '__main__':
                 print("Device Entry Not Successful")
     else:
         deviceId = dbObject.getDeviceId(database)
+        deviceInfo = dbObject.getAllDeviceInfo(database)
         if (dbObject.checkAddressUpdateRequired(1, database)):
             if(apiObjectPrimary.checkServerStatus()):
                 requiredDetils = apiObjectPrimary.getAllConfigurationDetails(deviceId)
                 if requiredDetils != '0' and requiredDetils != "Server Error":
-                    if float(requiredDetils['osversion']) > float(osVersion):
-                        codeUpdateFlag = updateToNewCode(str(requiredDetils['devicecodename']),\
-                                                         str(requiredDetils['devicecodeurl']))
-                        if codeUpdateFlag == 1:
-                            fileObject.updateCurrentVersion(requiredDetils['osversion'])
-                            restart()
+                    checkForFirmwareUpdate(requiredDetils)
                     deviceName = requiredDetils['devicename']
                     companyId = requiredDetils['companyid']
                     address = requiredDetils['address']
@@ -149,7 +155,7 @@ if __name__ == '__main__':
                         dbObject.updateConfigurationTable(baseUrl,subUrl,database)
                     else:
                         dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
-                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, osVersion database)
+                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, osVersion, database)
                     if (deviceInfoUpdateStatus):
                         dbObject.resetServerUpdatedStatus(2)
         elif (dbObject.checkAddressUpdateRequired(2, database)):

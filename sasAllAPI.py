@@ -280,16 +280,17 @@ class sasAllAPI:
         
     def getAllConfigurationDetails(self, deviceId):
         try:
-            mainURL = self.mainURL + "update_sync_status"
+            mainURL = self.mainURL + "get_device_info"
             payload = {"deviceid" : deviceId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
             output = json.loads(r.content)
             print("Data Received {}".format(r.content))
-            if (output['status'] == "success"):
+            if (output['status'] == "success" and output['code'] == 1):
                 return output['data']
-            else:
-                return '0'
+            elif output['code'] == 2:
+                return '1'
+            return '0'
         
         except Exception as e:
             fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))

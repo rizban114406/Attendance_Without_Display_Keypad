@@ -482,6 +482,10 @@ class sasDatabase:
     def insertIntoConfigurationTable(self,baseUrl,\
                                         subUrl,\
                                         database):
+        if (baseUrl is None):
+            baseUrl = ""
+        if (subUrl is None):
+            subUrl = ""
         curs = database.cursor()
         curs.execute("INSERT INTO configurationTable(baseUrl,\
                                                      subUrl,\
@@ -541,10 +545,31 @@ class sasDatabase:
                                                     (baseURL,\
                                                      subURL,))
         self.databaseCommit(database)
+    
+    def setServerUpdatedStatus(self,locationType,database):
+        curs = database.cursor()
+        curs.execute ("UPDATE configurationTable SET serverUpdated = '1' \
+                                                     WHERE id = ?",\
+                                                    (locationType,))
+        self.databaseCommit(database)
         
     def resetServerUpdatedStatus(self,locationType,database):
         curs = database.cursor()
-        curs.execute ("UPDATE configurationTable SET serverUpdated = 0 \
+        curs.execute ("UPDATE configurationTable SET serverUpdated = '0' \
+                                                     WHERE id = ?",\
+                                                    (locationType,))
+        self.databaseCommit(database)
+        
+    def setUpdatedRequiredStatus(self,locationType,database):
+        curs = database.cursor()
+        curs.execute ("UPDATE configurationTable SET updateRequired = '1' \
+                                                     WHERE id = ?",\
+                                                    (locationType,))
+        self.databaseCommit(database)
+        
+    def resetUpdatedRequiredStatus(self,locationType,database):
+        curs = database.cursor()
+        curs.execute ("UPDATE configurationTable SET updateRequired = '0' \
                                                      WHERE id = ?",\
                                                     (locationType,))
         self.databaseCommit(database)
