@@ -259,6 +259,9 @@ if __name__ == '__main__':
             else:
                 baseUrl = serverInfo[1]
                 subUrl = serverInfo[2]
+                
+                
+                
             
             
         
