@@ -106,17 +106,35 @@ def setWIFINetworkConfiguration(wifiSettings):
         
 def setEthernetConfiguration(staticIPInfo):
     try:
-        lines = fileObject.readEthernetSettings()
-        i = lines.index('#profile static_eth0\n')
+        existingEthernetSettings = fileObject.readCurrentEthernetSettings().split('-')
+        isChangeRequired = 0
         if staticIPInfo["obtainauto"] == '1':
-            del lines[i+1:]
-        else:
-            staticIP = "static ip_address="+ staticIPInfo["static"]["ip"] + '/' + staticIPInfo["static"]["mask"] + "\n"
-            lines.insert(i+1, staticIP)
-            staticIP = "static routers="+ staticIPInfo["static"]["gateway"] + "\n"
-            lines.insert(i+2, staticIP)
-            del lines[i+3:]
-        fileObject.writeEthernetSettings(lines)
+            if staticIPInfo["obtainauto"] != existingEthernetSettings[0]:
+                isChangeRequired = 1
+        
+        elif staticIPInfo["obtainauto"] == '0':
+            if staticIPInfo["static"]["ip"] != existingEthernetSettings[1] or \
+               staticIPInfo["static"]["mask"] != existingEthernetSettings[2] or \
+               staticIPInfo["static"]["gateway"] != existingEthernetSettings[3]:
+                  isChangeRequired = 1
+        
+        if isChangeRequired == 1:
+            lines = fileObject.readEthernetSettings()
+            i = lines.index('#profile static_eth0\n')
+            if staticIPInfo["obtainauto"] == '1':
+                currentEthernetSettings = "1-0-0-0"
+                del lines[i+1:]
+            else:
+                staticIP = "static ip_address="+ staticIPInfo["static"]["ip"] + '/' + staticIPInfo["static"]["mask"] + "\n"
+                lines.insert(i+1, staticIP)
+                staticGateway = "static routers="+ staticIPInfo["static"]["gateway"] + "\n"
+                lines.insert(i+2, staticGateway)
+                currentEthernetSettings = "0-" + staticIPInfo["static"]["ip"] +\
+                                           "-" + staticIPInfo["static"]["mask"] +\
+                                           "-" + staticIPInfo["static"]["gateway"]
+                del lines[i+3:]
+            fileObject.writeCurrentEthernetSettings(currentEthernetSettings)
+            fileObject.writeEthernetSettings(lines)
         return 1
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{setEthernetConfiguration}: ",str(e))
@@ -209,57 +227,38 @@ if __name__ == '__main__':
                         
                     deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
                     configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
-                    
-                        
-                        
                     networkSettings = requiredDetils['networksettings']
                     ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
-                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
-                    
-                    if (deviceInfoUpdateStatus):
+                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])                   
+                    if (deviceInfoUpdateStatus == 1 and configInfoUpdateStatus == 1\
+                        and ethernetSetings == 1 and wifiSettings == 1):
                         dbObject.setUpdatedRequiredStatus(1)
                         dbObject.resetServerUpdatedStatus(2)
                 elif requiredDetils == '1':
                     dbObject.setUpdatedRequiredStatus(1)
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
+       
         elif (dbObject.checkAddressUpdateRequired(2, database)):
             if(apiObjectSecondary.checkServerStatus()):
                 requiredDetils = apiObjectSecondary.getAllConfigurationDetails(deviceId)
                 if requiredDetils != '0' and requiredDetils != "Server Error":
-                    deviceName = requiredDetils['devicename']
-                    companyId = requiredDetils['companyid']
-                    address = requiredDetils['address']
-                    subaddress = requiredDetils['subaddress']
-#                    baseUrl = requiredDetils['baseurl']
-#                    subUrl = requiredDetils['suburl']
+                    deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
+                    configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
                     networkSettings = requiredDetils['networksettings']
                     ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
-                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
-#                    if (dbObject.checkSecondaryAddressAvailable(database)):
-#                        dbObject.updateConfigurationTable(baseUrl,subUrl,database)
-#                    else:
-#                        dbObject.insertIntoConfigurationTable(baseUrl,subUrl,database)
-                    deviceInfoUpdateStatus = dbObject.updateDeviceInfoTable(deviceName, address, subaddress, ipAddress, companyId, osVersion, database)
-                    if (deviceInfoUpdateStatus):
+                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])                   
+                    if (deviceInfoUpdateStatus == 1 and configInfoUpdateStatus == 1\
+                        and ethernetSetings == 1 and wifiSettings == 1):
+                        dbObject.setUpdatedRequiredStatus(2)
                         dbObject.resetServerUpdatedStatus(1)
+                        
         elif (dbObject.checkServerUpdateStatus(1, database)):
-            deviceDetails = dbObject.getAllDeviceInfo(database)
             serverInfo = dbObject.getSecondaryAddressInfo(database)
+            if serverInfo == '0':
+                baseUrl = ""
+                subUrl = ""
+            else:
+                baseUrl = serverInfo[1]
+                subUrl = serverInfo[2]
             
             
         

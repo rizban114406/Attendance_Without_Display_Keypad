@@ -75,31 +75,32 @@ class sasFile:
         file.write(storedIndex)
         file.close()
 
-    def updateHearBitURL(self,url):
-        file = open('heartBitUrl.txt', 'w+')
-        file.write(url)
-        file.close()
-    
-    def readStartTime(self):
-        try:           
-            file = open('startTime.txt','r')
-            startTime = file.readline()
-            file.close()
-        except Exception as e:
-            self.updateStartTime("")
-            startTime = None
-            self.updateExceptionMessage("sasFile{readStartTime}: ",str(e))
-        return startTime
-    
-    def updateStartTime(self,startTime):
-        file = open('startTime.txt', 'w+')
-        file.write(startTime)
-        file.close()
+#    def updateHearBitURL(self,url):
+#        file = open('heartBitUrl.txt', 'w+')
+#        file.write(url)
+#        file.close()
+#    
+#    def readStartTime(self):
+#        try:           
+#            file = open('startTime.txt','r')
+#            startTime = file.readline()
+#            file.close()
+#        except Exception as e:
+#            self.updateStartTime("")
+#            startTime = None
+#            self.updateExceptionMessage("sasFile{readStartTime}: ",str(e))
+#        return startTime
+#    
+#    def updateStartTime(self,startTime):
+#        file = open('startTime.txt', 'w+')
+#        file.write(startTime)
+#        file.close()
         
     def readRequestId(self):
         try:           
             file = open('requestId.txt','r')
             requestId = file.readline()
+            requestId = requestId.replace('\n','')
             file.close()
         except Exception as e:
             self.updateRequestId("0")
@@ -160,6 +161,23 @@ class sasFile:
     
     def writeEthernetSettings(self,lines):
         file = open('/etc/dhcpcd.conf','w')
+        file.writelines(lines)
+        file.close()
+        
+    def readCurrentEthernetSettings(self):
+        try:           
+            file = open('ethernet.txt','r')
+            ethernet = file.readline()
+            ethernet = ethernet.replace('\n','')
+            file.close()
+        except Exception as e:
+            self.writeCurrentEthernetSettings("1-")
+            ethernet = "1-0-0-0"
+            self.updateExceptionMessage("sasFile{readCurrentEthernetSettings}: ",str(e))
+        return ethernet
+    
+    def writeCurrentEthernetSettings(self,lines):
+        file = open('ethernet.txt','w+')
         file.writelines(lines)
         file.close()
         

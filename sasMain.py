@@ -639,17 +639,18 @@ def workWithRFSensor():
                 rfScannerValue = readFromRFIDScanner()
                 employeeCardNumber = int(rfScannerValue,16)
                 print(employeeCardNumber)
-                lock.acquire()
-                desiredTask = fileObject.readDesiredTask()
-                if desiredTask == '1':
-                    fileObject.updateDesiredTask('7')
-                    desiredTask = '7'
-                if desiredTask == '7':
-    #                print('Card Number is: {}'.format(employeeCardNumber))
-                    createEventLogg(employeeCardNumber,'2',dbObject,database)
-                    fileObject.updateDesiredTask('1')
-                lock.release()
-                t.sleep(1)
+                if len(rfScannerValue) < 10:
+                    lock.acquire()
+                    desiredTask = fileObject.readDesiredTask()
+                    if desiredTask == '1':
+                        fileObject.updateDesiredTask('7')
+                        desiredTask = '7'
+                    if desiredTask == '7':
+        #                print('Card Number is: {}'.format(employeeCardNumber))
+                        createEventLogg(employeeCardNumber,'2',dbObject,database)
+                        fileObject.updateDesiredTask('1')
+                    lock.release()
+                    t.sleep(1)
         except Exception as e:
             fileObject.updateExceptionMessage("sasMain{workWithRFSensor}: ",str(e))
             os.system('sudo pkill -f sasMain.py')
