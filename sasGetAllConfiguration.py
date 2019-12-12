@@ -207,6 +207,37 @@ def checkForServerAddressInfo():
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{checkForServerAddressInfo}: ",str(e))
         return 0
+    
+def generateDataToUpdateInfor(deviceInfo,urls):
+    existingEthernetSettings = fileObject.readCurrentEthernetSettings().split('-')
+    wifiNetworks = dbObject.getWifiConfigs(database)
+    wifisettings = []
+    for wifi in wifiNetworks:
+        wifisettings.append({"ssid" : wifi[0],\
+                             "password" : wifi[1],\
+                             "priority" : wifi[2]})
+    staticIpSettings = {"ip" : existingEthernetSettings[1],\
+                        "mask" : existingEthernetSettings[2],\
+                        "gateway" : existingEthernetSettings[3]}
+    
+    ethernetSettings = {"obtainauto" : existingEthernetSettings[0],\
+                        "static" : staticIpSettings}
+    
+    networkSettings = {"ethernet" : ethernetSettings,\
+                       "wifi" : wifisettings,\
+                       "gsm" : gsmFlag}
+    
+    deviceInfoToSend = {"id" : deviceInfo[2],\
+                  "uniqueid" : deviceInfo[1],\
+                  "osversion" : osVersion,\
+                  "devicename" : deviceInfo[4],\
+                  "company" : deviceInfo[8],\
+                  "address" : deviceInfo[6],\
+                  "subaddress" : deviceInfo[6],\
+                  "baseurl" : urls[0],\
+                  "suburl" : urls[1],\
+                  "networksettings" : networkSettings}
+    return deviceInfoToSend
 
 if __name__ == '__main__':
     deviceInfoRowNum = dbObject.countDeviceInfoTable(database)
@@ -263,11 +294,11 @@ if __name__ == '__main__':
         elif (dbObject.checkServerUpdateStatus(1, database)):
             serverInfo = dbObject.getSecondaryAddressInfo(database)
             if serverInfo == '0':
-                baseUrl = ""
-                subUrl = ""
+                urls = ["",""]
             else:
-                baseUrl = serverInfo[1]
-                subUrl = serverInfo[2]
+                urls = [serverInfo[1], serverInfo[2]]
+                
+            dataToSend = generateDataToUpdateInfor(deviceInfo,urls)
             
             
         
