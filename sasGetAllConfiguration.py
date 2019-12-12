@@ -99,6 +99,7 @@ def setWIFINetworkConfiguration(wifiSettings):
                                                      database)
             del lines[i+1:]
             fileObject.writeWifiSettings(lines)
+            return 2
         return 1
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{setWIFINetworkConfiguration}: ",str(e))
@@ -135,6 +136,7 @@ def setEthernetConfiguration(staticIPInfo):
                 del lines[i+3:]
             fileObject.writeCurrentEthernetSettings(currentEthernetSettings)
             fileObject.writeEthernetSettings(lines)
+            return 2
         return 1
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{setEthernetConfiguration}: ",str(e))
@@ -175,6 +177,7 @@ def checkForChangeinDeviceInfo(requiredDetils,deviceInfo):
                                            requiredDetils['companyid'],\
                                            osVersion,\
                                            database)
+            return 2
         return 1
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{checkForChangeinDeviceInfo}: ",str(e))
@@ -194,10 +197,12 @@ def checkForServerAddressInfo():
                     dbObject.updateConfigurationTable(requiredDetils['baseurl'],\
                                                       requiredDetils['suburl'],\
                                                       database)
+                    return 2
             else:
                 dbObject.insertIntoConfigurationTable(requiredDetils['baseurl'],\
                                                       requiredDetils['suburl'],\
                                                       database)
+                return 2
         return 1
     except Exception as e:
         fileObject.updateExceptionMessage("sasGetAllConfiguration{checkForServerAddressInfo}: ",str(e))
@@ -229,11 +234,13 @@ if __name__ == '__main__':
                     configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
                     networkSettings = requiredDetils['networksettings']
                     ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
-                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])                   
-                    if (deviceInfoUpdateStatus == 1 and configInfoUpdateStatus == 1\
-                        and ethernetSetings == 1 and wifiSettings == 1):
-                        dbObject.setUpdatedRequiredStatus(1)
+                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
+                    if (deviceInfoUpdateStatus == 2 or configInfoUpdateStatus == 2\
+                        or ethernetSetings == 2 or wifiSettings == 2):
                         dbObject.resetServerUpdatedStatus(2)
+                    if (deviceInfoUpdateStatus != 0 and configInfoUpdateStatus != 0\
+                        and ethernetSetings != 0 and wifiSettings != 0):
+                        dbObject.setUpdatedRequiredStatus(1)
                 elif requiredDetils == '1':
                     dbObject.setUpdatedRequiredStatus(1)
        
@@ -242,14 +249,16 @@ if __name__ == '__main__':
                 requiredDetils = apiObjectSecondary.getAllConfigurationDetails(deviceId)
                 if requiredDetils != '0' and requiredDetils != "Server Error":
                     deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
-                    configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
+#                    configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
                     networkSettings = requiredDetils['networksettings']
                     ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
-                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])                   
-                    if (deviceInfoUpdateStatus == 1 and configInfoUpdateStatus == 1\
-                        and ethernetSetings == 1 and wifiSettings == 1):
-                        dbObject.setUpdatedRequiredStatus(2)
+                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
+                    if (deviceInfoUpdateStatus == 2 \ #or configInfoUpdateStatus == 2\
+                        or ethernetSetings == 2 or wifiSettings == 2):
                         dbObject.resetServerUpdatedStatus(1)
+                    if (deviceInfoUpdateStatus != 0 \ #and configInfoUpdateStatus != 0\
+                        and ethernetSetings != 0 and wifiSettings != 0):
+                        dbObject.setUpdatedRequiredStatus(2)
                         
         elif (dbObject.checkServerUpdateStatus(1, database)):
             serverInfo = dbObject.getSecondaryAddressInfo(database)
@@ -259,9 +268,6 @@ if __name__ == '__main__':
             else:
                 baseUrl = serverInfo[1]
                 subUrl = serverInfo[2]
-                
-                
-                
             
             
         

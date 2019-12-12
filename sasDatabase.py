@@ -406,50 +406,6 @@ class sasDatabase:
             return '0'
     ####################### All Functions Regarding Employee Card Info Table ###################
 
-#    ####################### All Functions Regarding Company Info Table ###################
-#    def createTableCompanyListTable(self,database):
-#        curs = database.cursor()
-#        try:      
-#            curs.execute("DROP TABLE companyListTable")
-#            self.databaseCommit(database)
-#            t.sleep(1)
-#        except Exception:
-#            print("Does not Exists")
-##        curs.execute("DROP TABLE IF EXISTS companyListTable")
-##        self.databaseCommit(database)
-##        t.sleep(.5)
-#        curs.execute("CREATE TABLE companyListTable(id      INTEGER PRIMARY KEY AUTOINCREMENT,\
-#                                                  companyId INTEGER,\
-#                                                  shortName TEXT)")
-#        self.databaseCommit(database)
-#
-#    def getAllCompanyList(self,database):
-#        curs = database.cursor()
-#        curs.execute("Select companyId,shortName From companyListTable")
-#        self.databaseCommit(database)
-#        return curs
-#
-#    def checkCompanyListTable(self,companyId,database): 
-#        curs = database.cursor()
-#        curs.execute ("SELECT companyName FROM companyListTable WHERE companyId = ?",(int(companyId),))
-#        desiredDetails = curs.fetchone()
-#        print(desiredDetails)
-#        if (desiredDetails != None):
-#            return '1'
-#        else:
-#            return '0'
-#
-#    def insertIntoCompanyListTable(self,companyId,\
-#                                        shortName,\
-#                                        database):
-#        curs = database.cursor()
-#        curs.execute("INSERT INTO companyListTable(companyId,\
-#                                                   shortName) VALUES (?,?)",\
-#                                                   (int(companyId),\
-#                                                   str(shortName)))
-#        self.databaseCommit(database)
-#    ####################### All Functions Regarding Company Info Table ###################
-
     ####################### All Functions Regarding Configuration Info Table ###################
 
     def createTableConfigInfoTable(self,database):

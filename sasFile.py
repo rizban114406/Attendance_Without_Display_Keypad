@@ -17,19 +17,19 @@ class sasFile:
         file.write(command)
         file.close()
         
-    def readSyncConfStatus(self):
+    def readSyncStatus(self):
         try:
-            file = open('syncConfStatus.txt','r')
+            file = open('syncStatus.txt','r')
             state = file.read(1)
             file.close()
         except Exception as e:
             self.updateSyncConfStatus('0')
-            self.updateExceptionMessage("sasFile{readDesiredTask}",str(e))
+            self.updateExceptionMessage("sasFile{readSyncConfStatus}: ",str(e))
             state = '0'
         return state
         
-    def updateSyncConfStatus(self,state):
-        file = open('syncConfStatus.txt', 'w+')
+    def updateSyncStatus(self,state):
+        file = open('syncStatus.txt', 'w+')
         file.write(state)
         file.close()
 

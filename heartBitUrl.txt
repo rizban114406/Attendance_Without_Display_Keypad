@@ -1,1 +1,0 @@
-http://sas.aqualinkbd.com/sas-test/api/server_heartbit

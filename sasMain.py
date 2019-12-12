@@ -13,12 +13,14 @@ import pusher as push
 import json
 import RPi.GPIO as GPIO
 
-greenLightPin = 13
 redLightPin = 21
+greenLightPin = 20
+blueLightPin = 13
 buzzerPin = 27
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(greenLightPin, GPIO.OUT)
 GPIO.setup(redLightPin, GPIO.OUT)
+GPIO.setup(greenLightPin, GPIO.OUT)
+GPIO.setup(blueLightPin, GPIO.OUT)
 GPIO.setup(buzzerPin, GPIO.OUT)
 
 
@@ -60,7 +62,7 @@ def getDeviceId():
     return deviceId
     
 desiredTask = '1'
-confStatus = '0'
+syncStatus = '0'
 lock = threading.Lock()
 startTime = fileObject.readStartTime()
 
@@ -166,10 +168,10 @@ def syncUsersToSensor(f,dbObject,database):
                 createNewTemplateToSync(f,reading,dbObject,database)
                 t.sleep(.3)
             updateListOfUsedTemplates(f)
-            fileObject.updateSyncConfStatus('0')
+            fileObject.updateSyncStatus('0')
         else:
             print("Device Is Fully Synced With The Server")
-            fileObject.updateSyncConfStatus('0')
+            fileObject.updateSyncStatus('0')
             
     except Exception as e:
         fileObject.updateExceptionMessage("sasMain{syncUsersToSensor}: ",str(e))
@@ -253,7 +255,7 @@ def syncronizationProcess():
     while True:
         try:
             print("Current syncronizationProcess Thread ID: {}".format(threading.current_thread()))
-            if (fileObject.readSyncConfStatus() == '1'):
+            if (fileObject.readSyncStatus() == '1'):
                 from sasDatabase import sasDatabase
                 dbObject = sasDatabase()
                 database = dbObject.connectDataBase()
@@ -261,9 +263,9 @@ def syncronizationProcess():
                 fingerSyncStatus = getFingerprintInformation(dbObject,database)
                 
                 if fingerSyncStatus == "Synced From Server":
-                    fileObject.updateSyncConfStatus('2')
+                    fileObject.updateSyncStatus('2')
                 elif fingerSyncStatus == "Already Synced":
-                    fileObject.updateSyncConfStatus('0')
+                    fileObject.updateSyncStatus('0')
                 t.sleep(2)
             else:
                 t.sleep(5)
@@ -491,6 +493,40 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
          fileObject.updateRequestId("0")
          sendPusherCommand(hardwareId,"TIME_OUT",requestId)
 
+def turnLEDON(color):
+    if color == 'R':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 0)
+    elif color == 'G':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 0)
+    elif color == 'B':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'W':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'R+G':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 0)
+    elif color == 'G+B':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'R+B':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'OFF':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 0)
+    
 def turnOnBuzzer(access):
     GPIO.output(buzzerPin, 1)
     if access == 1:
@@ -506,16 +542,16 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
         print("Punched Employee ID: {}".format(employeeDetails))
         if employeeDetails == '0':
             print("No Card Record Found")
-            GPIO.output(redLightPin, 1)
             dbObject.insertEventTime("0",\
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
                                      attendanceFlag,\
                                      '0',\
                                      database)
+            turnLEDON('R') #RED
             turnOnBuzzer(0)
-            t.sleep(1)
-            GPIO.output(redLightPin, 0)
+            t.sleep(.5)
+            turnLEDON('OFF') #OFF
         else :
             print("Card Record Found")
             GPIO.output(greenLightPin, 1)
@@ -525,10 +561,11 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag,\
                                      employeeDetails[1],\
                                      database)
+            turnLEDON('G') #GREEN
             turnOnBuzzer(1)
-            t.sleep(1)
-            GPIO.output(greenLightPin, 0)
-    elif attendanceFlag == '1':
+            t.sleep(.5)
+            turnLEDON('OFF') #OFF
+    elif attendanceFlag == '1': #################################################Check For Secondary Address in event script######
         employeeDetails = dbObject.getEmployeeDetails(employeeCardorFingerNumber,database)
         print("Punched Employee ID: {}".format(employeeDetails))
         if employeeDetails != '0':
@@ -539,19 +576,19 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag, \
                                      employeeDetails[1], \
                                      database)
-            GPIO.output(greenLightPin, 1)
+            turnLEDON('G') #GREEN
             turnOnBuzzer(1)
-            t.sleep(1)
-            GPIO.output(greenLightPin, 0)
+            t.sleep(.5)
+            turnLEDON('OFF') #OFF
             return 1
         else:
             print("No Finger Record Found")
-            GPIO.output(redLightPin, 1)
-            turnOnBuzzer()
-            t.sleep(1)
-            GPIO.output(redLightPin, 0)
+            turnLEDON('R') #RED
+            turnOnBuzzer(0)
+            t.sleep(.5)
+            turnLEDON('OFF') #OFF
             return 0
-       
+        
 def matchFingerPrint(f,dbObject,database):
     try:
         f.convertImage(0x01)
@@ -560,10 +597,10 @@ def matchFingerPrint(f,dbObject,database):
         print(positionNumber)
         if (positionNumber == -1):
             print("No Finger Record Found")
-            GPIO.output(redLightPin, 1)
+            turnLEDON('R') #RED
             turnOnBuzzer(0)
-            t.sleep(1)
-            GPIO.output(redLightPin, 0)
+            t.sleep(.5)
+            turnLEDON('OFF') #OFF
         else:
             fingerFlag = createEventLogg(positionNumber,'1',dbObject,database)
             if fingerFlag == 0:
@@ -588,7 +625,7 @@ def readFromRFIDScanner():
     
 def workWithFingerPrintSensor(f):
     global desiredTask
-    global confStatus
+    global syncStatus
     while True:
         try:
             from sasDatabase import sasDatabase
@@ -598,15 +635,15 @@ def workWithFingerPrintSensor(f):
                 while (f.readImage() == False):
 #                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
                     desiredTask = fileObject.readDesiredTask()
-                    confStatus = fileObject.readSyncConfStatus()
+                    syncStatus = fileObject.readSyncStatus()
                     print(desiredTask)
-                    print(confStatus)
-                    if (desiredTask == '2' or confStatus == '2') :
+                    print(syncStatus)
+                    if (desiredTask == '2' or syncStatus == '2') :
                         break
                     t.sleep(.8)
                 lock.acquire()
                 desiredTask = fileObject.readDesiredTask()
-                if desiredTask == '1'and confStatus != '2':
+                if desiredTask == '1'and syncStatus != '2':
                     fileObject.updateDesiredTask('6')
                     desiredTask = '6'
     #            print("Modified Task is {}".format(desiredTask))    
@@ -616,7 +653,7 @@ def workWithFingerPrintSensor(f):
                 elif desiredTask == '2':
                     enrollNewEmployee(f,deviceId,dbObject,database)
                     fileObject.updateDesiredTask('1')
-                elif confStatus == '2':
+                elif syncStatus == '2':
                     print("Sync Process")
                     syncUsersToSensor(f,dbObject,database)
                 lock.release()
