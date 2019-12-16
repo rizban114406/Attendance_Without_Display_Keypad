@@ -1,47 +1,99 @@
+import time
 from sasDatabase import sasDatabase
 from sasAllAPI import sasAllAPI
 from sasFile import sasFile
+fileObject = sasFile()
 dbObject = sasDatabase()
 database = dbObject.connectDataBase()
+apiObjectPrimary = sasAllAPI(1)
+apiObjectSecondary = sasAllAPI(2)
 if __name__ == '__main__':
-
-    try:
-        deviceInfo = dbObject.getAllDeviceInfo(database)
-        if deviceInfo != '0':
-            allEventData = dbObject.getAllEventData(database)
-            deviceInfoData = {"deviceid"   : deviceInfo[1],\
-                              "companyid"  : deviceInfo[3],\
-                              "address"    : deviceInfo[4],\
-                              "subaddress" : deviceInfo[5]}
-            eventInfoData =[]
-            date_count = []
-            for reading in allEventData:
-                date_count.append(reading[2])
-                eventInfoData.append({"eventdatetime"       : str(reading[2]),\
-                                      "uniqueid"            : str(reading[0]), \
-                                      "fingerorcardnumber"  : str(reading[1]),\
-                                      "eventtype"           : str(reading[3]) , \
-                                      "companyid"           : str(reading[4])})
-            mainData = {"deviceinfo" : deviceInfoData, \
-                        "eventdata"  : eventInfoData}
+    deviceId = dbObject.getDeviceId()
+    if deviceId != 0:
+        if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
+           dbObject.checkAddressUpdateRequired(1, database) == 0):
+            
+            dbObject.resetUpdatedRequiredStatus(1)
+            apiObjectPrimary.confirmUpdateRequest(deviceId)
+            
+        if(database.checkSecondaryAddressAvailable() == 1 and \
+           dbObject.checkAddressUpdateRequired(2, database) == 0):
+            
+            if (apiObjectSecondary.checkUpdateRequest(deviceId) == 0):
+                dbObject.resetUpdatedRequiredStatus(2)
+                apiObjectSecondary.confirmUpdateRequest(deviceId)
+            
+        while True:
+            primary, secondary = fileObject.readNetworkStatus().split('-')
+            primaryStatus = apiObjectPrimary.checkServerStatus()
+            if (primaryStatus == 0 and primary == '1'):
+                primary = '0'
+                fileObject.updateNetworkStatus(primary,secondary)
                 
-            if(len(allEventData) > 0):       
-                apiObject = sasAllAPI(2)
-                message = apiObject.sendEventData(mainData)
-                print(message)
-                if message == "Success":
-                    print("Sent Successfully")
-                    print(date_count)
-                    for date in date_count :
-                        print(date)
-                        dbObject.deleteFromEventListTable(date,database)
-                elif message == "Not Successfull":
-                    print("Something Went Wrong")
-                else:
-                    print(message)
-                dbObject.databaseClose(database)
-    except Exception as e:
-        #print str(e)
-        fileObject = sasFile()
-        dbObject.databaseClose(database)
-        fileObject.updateExceptionMessage("sasEvents{__main__}",str(e))
+            elif (primaryStatus == 1 and primary == '0'):
+                if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
+                   dbObject.checkAddressUpdateRequired(1, database) == 0):
+                    dbObject.resetUpdatedRequiredStatus(1)
+                    apiObjectPrimary.confirmUpdateRequest(deviceId)
+                    primary = '1'
+                    fileObject.updateNetworkStatus(primary,secondary)
+            
+            if (database.checkSecondaryAddressAvailable() == 0):
+                secondaryStatus = apiObjectSecondary.checkServerStatus()
+                if (secondaryStatus == 0 and secondary == '1'):
+                    secondary = '0'
+                    fileObject.updateNetworkStatus(primary,secondary)
+                    
+                elif (secondaryStatus == 1 and secondary == '0'):
+                    if(apiObjectSecondary.checkUpdateRequest(deviceId) == 0 and \
+                       dbObject.checkAddressUpdateRequired(2, database) == 0):
+                        dbObject.resetUpdatedRequiredStatus(2)
+                        apiObjectSecondary.confirmUpdateRequest(deviceId)
+                        secondary = '1'
+                        fileObject.updateNetworkStatus(primary,secondary)
+                
+                if (secondaryStatus == 1):
+                    try:
+                        deviceInfo = dbObject.getAllDeviceInfo(database)
+                        if deviceInfo != '0':
+                            allEventData = dbObject.getAllEventData(database)
+                            deviceInfoData = {"deviceid"   : deviceInfo[2],\
+                                              "companyid"  : deviceInfo[8],\
+                                              "address"    : deviceInfo[3],\
+                                              "subaddress" : deviceInfo[6]}
+                            eventInfoData =[]
+                            date_count = []
+                            for reading in allEventData:
+                                date_count.append(reading[2])
+                                eventInfoData.append({"eventdatetime"       : str(reading[2]),\
+                                                      "uniqueid"            : str(reading[0]), \
+                                                      "fingerorcardnumber"  : str(reading[1]),\
+                                                      "eventtype"           : str(reading[3]) , \
+                                                      "companyid"           : str(reading[4])})
+                            mainData = {"deviceinfo" : deviceInfoData, \
+                                        "eventdata"  : eventInfoData}
+                                
+                            if(len(allEventData) > 0):
+                                message = apiObjectSecondary.sendEventData(mainData)
+                                print(message)
+                                if message == "Success":
+                                    print("Sent Successfully")
+                                    print(date_count)
+                                    for date in date_count :
+                                        print(date)
+                                        dbObject.deleteFromEventListTable(date,database)
+                                elif message == "Not Successfull":
+                                    print("Something Went Wrong")
+                                else:
+                                    print(message)
+                                dbObject.databaseClose(database)
+                        time.sleep(3)
+                        continue
+                    except Exception as e:
+                        #print str(e)
+                        dbObject.databaseClose(database)
+                        fileObject.updateExceptionMessage("sasEvents{__main__}",str(e)) 
+            else:
+                dbObject.truncateEventListTable(database)
+                time.sleep(5)
+            

@@ -34,9 +34,6 @@ def getIpAddress():
     ip =  commands.getoutput('hostname -I')
     return ip
 
-hardwareId = getHardwareId()
-osVersion = fileObject.readCurrentVersion()
-
 def restart():
     dbObject.databaseClose(database)
     command = "/usr/bin/sudo /sbin/shutdown -r now"
@@ -69,6 +66,7 @@ def updateToNewCode(deviceCodeName,deviceCodeURL):
 def setWIFINetworkConfiguration(wifiSettings):
     try:
         isChangeRequired = 0
+        print("New Wifi Settings: {}".format(wifiSettings))
         for settings in wifiSettings:
             if(dbObject.checkWifiConfigsChange(settings["ssid"],\
                                                settings["password"],\
@@ -108,6 +106,7 @@ def setWIFINetworkConfiguration(wifiSettings):
 def setEthernetConfiguration(staticIPInfo):
     try:
         existingEthernetSettings = fileObject.readCurrentEthernetSettings().split('-')
+        print("Existing Ethernet Settings: {}".format(existingEthernetSettings))
         isChangeRequired = 0
         if staticIPInfo["obtainauto"] == '1':
             if staticIPInfo["obtainauto"] != existingEthernetSettings[0]:
@@ -147,8 +146,6 @@ try:
     database = dbObject.connectDataBase()
 except Exception as e:
     fileObject.updateExceptionMessage("sasGetALLConfiguration{DB Error}: ",str(e))
-    dbObject = sasDatabase()
-    database = dbObject.connectDataBase()
     
 def checkForFirmwareUpdate(runningOsVersion, deviceCodeUrl, deviceCodeName):
     if float(runningOsVersion) > float(osVersion):
@@ -160,6 +157,8 @@ def checkForFirmwareUpdate(runningOsVersion, deviceCodeUrl, deviceCodeName):
             
 def checkForChangeinDeviceInfo(requiredDetils,deviceInfo):
     try:
+        print("Existing Device Info: {}".format(deviceInfo))
+        print("Change In Device Info: {}".format(requiredDetils))
         isChangeRequired = 0
         if (requiredDetils['devicename'] is not None and requiredDetils['devicename'] != deviceInfo[4]):
             isChangeRequired = 1
@@ -183,11 +182,13 @@ def checkForChangeinDeviceInfo(requiredDetils,deviceInfo):
         fileObject.updateExceptionMessage("sasGetAllConfiguration{checkForChangeinDeviceInfo}: ",str(e))
         return 0
     
-def checkForServerAddressInfo():
+def checkForServerAddressInfo(requiredDetils):
     try:
+        print("Change In Device Server Info: {}".format(requiredDetils))
         if (requiredDetils['baseurl'] is not None and requiredDetils['baseurl'] is not None):    
             if (dbObject.checkSecondaryAddressAvailable(database)):
-                confDetails = dbObject.getSecondaryAddressInfo(database)
+                confDetails = dbObject.getAllConfigurationDetails(2,database)
+                print("Device Current Server Info: {}".format(confDetails))
                 isChangeRequired = 0
                 if (requiredDetils['baseurl'] != confDetails[1]):
                     isChangeRequired = 1
@@ -237,75 +238,97 @@ def generateDataToUpdateInfor(deviceInfo,urls):
                   "baseurl" : urls[0],\
                   "suburl" : urls[1],\
                   "networksettings" : networkSettings}
-    return deviceInfoToSend
+    dataToSend = {"data" : deviceInfoToSend}
+    print("Device Updated Info: {}".format(dataToSend))
+    return dataToSend
 
+osVersion = fileObject.readCurrentVersion()
 if __name__ == '__main__':
-    deviceInfoRowNum = dbObject.countDeviceInfoTable(database)
-    if deviceInfoRowNum == 0:
-        if(apiObjectPrimary.checkServerStatus() == 1):
-            ipAddress = getIpAddress()
-            receivedData = apiObjectPrimary.createDevice(hardwareId,osVersion)
-            if receivedData != '0' and receivedData != "Server Error":
-                dbObject.insertIntoDeviceInfoTable(hardwareId,receivedData['id'],osVersion,ipAddress)
-            else:
-                print("Device Entry Not Successful")
+    if(apiObjectPrimary.checkServerStatus() == 1 or apiObjectSecondary.checkServerStatus()):
+        hardwareId = getHardwareId()
+        deviceInfoRowNum = dbObject.countDeviceInfoTable(database)   
+        print("Device Row Count: {}".format(deviceInfoRowNum))
+        if deviceInfoRowNum == 0:
+            if(apiObjectPrimary.checkServerStatus() == 1):
+                ipAddress = getIpAddress()
+                receivedData = apiObjectPrimary.createDevice(hardwareId,osVersion)
+                print("Received Data From Create Device: {}".format(receivedData))
+                if receivedData != '0' and receivedData != "Server Error":
+                    dbObject.insertIntoDeviceInfoTable(hardwareId,receivedData['id'],osVersion,ipAddress)
+                    print("New Device is inserted Successfully")
+                else:
+                    print("Device Entry Not Successful")
+        else:
+            while True:
+                deviceId = dbObject.getDeviceId(database)
+                deviceInfo = dbObject.getAllDeviceInfo(database)
+                print("Device Info: {}".format(deviceInfo))
+                if (dbObject.checkAddressUpdateRequired(1, database)): # If ant Changes are made then this returns 1
+                    if(apiObjectPrimary.checkServerStatus()):
+                        requiredDetils = apiObjectPrimary.getAllConfigurationDetails(deviceId)
+                        print("Configuration Details From Server: {}".format(requiredDetils))
+                        if requiredDetils != '0' and requiredDetils != "Server Error":
+                            if ((requiredDetils['devicecodeurl'] is not None) and (requiredDetils['devicecodename'] is not None)):
+                                checkForFirmwareUpdate(requiredDetils['osversion'],\
+                                                       requiredDetils['devicecodeurl'],\
+                                                       requiredDetils['devicecodename'])
+                                
+                            deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
+                            configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
+                            networkSettings = requiredDetils['networksettings']
+                            ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
+                            wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
+                            print("deviceInfoUpdateStatus: {}, configInfoUpdateStatus: {}, \
+                                  ethernetSetings: {}, wifiSettings: {}".format(deviceInfoUpdateStatus,configInfoUpdateStatus,\
+                                  ethernetSetings,wifiSettings))
+                            if (deviceInfoUpdateStatus == 2 or configInfoUpdateStatus == 2\
+                                or ethernetSetings == 2 or wifiSettings == 2):
+                                dbObject.resetServerUpdatedStatus(2)
+                            if (deviceInfoUpdateStatus != 0 and configInfoUpdateStatus != 0\
+                                and ethernetSetings != 0 and wifiSettings != 0):
+                                dbObject.setUpdatedRequiredStatus(1)
+                        elif requiredDetils == '1':
+                            dbObject.setUpdatedRequiredStatus(1)
+               
+                elif (dbObject.checkAddressUpdateRequired(2, database)):
+                    if(apiObjectSecondary.checkServerStatus()):
+                        requiredDetils = apiObjectSecondary.getAllConfigurationDetails(deviceId)
+                        print("Configuration Details From Server: {}".format(requiredDetils))
+                        if requiredDetils != '0' and requiredDetils != "Server Error":
+                            deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
+        #                    configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
+                            networkSettings = requiredDetils['networksettings']
+                            ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
+                            wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
+                            print("deviceInfoUpdateStatus: {}, ethernetSetings: {}, \
+                                  wifiSettings: {}".format(deviceInfoUpdateStatus,\
+                                  ethernetSetings,wifiSettings))
+                            if (deviceInfoUpdateStatus == 2 \#or configInfoUpdateStatus == 2\
+                                or ethernetSetings == 2 or wifiSettings == 2):
+                                dbObject.resetServerUpdatedStatus(1)
+                            if (deviceInfoUpdateStatus != 0 \#and configInfoUpdateStatus != 0\
+                                and ethernetSetings != 0 and wifiSettings != 0):
+                                dbObject.setUpdatedRequiredStatus(2)
+                                
+                elif (dbObject.checkServerUpdateStatus(1, database)):
+                    serverInfo = dbObject.getAllConfigurationDetails(2,database)
+                    dataToSend = generateDataToUpdateInfor(deviceInfo,serverInfo)
+                    dataSendingFlag = apiObjectPrimary.updateDeviceInfoToServer(dataToSend)
+                    print("dataSendingFlag: {}".format(dataSendingFlag))
+                    if dataSendingFlag == 1:
+                        dbObject.setServerUpdatedStatus(1)
+                        
+                elif (dbObject.checkServerUpdateStatus(2, database)):
+                    serverInfo = dbObject.getAllConfigurationDetails(2,database)
+                    if serverInfo[0] != '':
+                        dataToSend = generateDataToUpdateInfor(deviceInfo,serverInfo)
+                        dataSendingFlag = apiObjectPrimary.updateDeviceInfoToServer(dataToSend)
+                        print("dataSendingFlag: {}".format(dataSendingFlag))
+                        if dataSendingFlag == 1:
+                            dbObject.setServerUpdatedStatus(2)
+                    else:
+                        dbObject.setServerUpdatedStatus(2)
+                else:
+                    break
     else:
-        deviceId = dbObject.getDeviceId(database)
-        deviceInfo = dbObject.getAllDeviceInfo(database)
-        if (dbObject.checkAddressUpdateRequired(1, database)):
-            if(apiObjectPrimary.checkServerStatus()):
-                requiredDetils = apiObjectPrimary.getAllConfigurationDetails(deviceId)
-                if requiredDetils != '0' and requiredDetils != "Server Error":
-                    if ((requiredDetils['devicecodeurl'] is not None) and (requiredDetils['devicecodename'] is not None)):
-                        checkForFirmwareUpdate(requiredDetils['osversion'],\
-                                               requiredDetils['devicecodeurl'],\
-                                               requiredDetils['devicecodename'])
-                        
-                    deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
-                    configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
-                    networkSettings = requiredDetils['networksettings']
-                    ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
-                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
-                    if (deviceInfoUpdateStatus == 2 or configInfoUpdateStatus == 2\
-                        or ethernetSetings == 2 or wifiSettings == 2):
-                        dbObject.resetServerUpdatedStatus(2)
-                    if (deviceInfoUpdateStatus != 0 and configInfoUpdateStatus != 0\
-                        and ethernetSetings != 0 and wifiSettings != 0):
-                        dbObject.setUpdatedRequiredStatus(1)
-                elif requiredDetils == '1':
-                    dbObject.setUpdatedRequiredStatus(1)
-       
-        elif (dbObject.checkAddressUpdateRequired(2, database)):
-            if(apiObjectSecondary.checkServerStatus()):
-                requiredDetils = apiObjectSecondary.getAllConfigurationDetails(deviceId)
-                if requiredDetils != '0' and requiredDetils != "Server Error":
-                    deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
-#                    configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
-                    networkSettings = requiredDetils['networksettings']
-                    ethernetSetings = setEthernetConfiguration(networkSettings['ethernet'])
-                    wifiSettings = setWIFINetworkConfiguration(networkSettings['wifi'])
-                    if (deviceInfoUpdateStatus == 2 \ #or configInfoUpdateStatus == 2\
-                        or ethernetSetings == 2 or wifiSettings == 2):
-                        dbObject.resetServerUpdatedStatus(1)
-                    if (deviceInfoUpdateStatus != 0 \ #and configInfoUpdateStatus != 0\
-                        and ethernetSetings != 0 and wifiSettings != 0):
-                        dbObject.setUpdatedRequiredStatus(2)
-                        
-        elif (dbObject.checkServerUpdateStatus(1, database)):
-            serverInfo = dbObject.getSecondaryAddressInfo(database)
-            if serverInfo == '0':
-                urls = ["",""]
-            else:
-                urls = [serverInfo[1], serverInfo[2]]
-                
-            dataToSend = generateDataToUpdateInfor(deviceInfo,urls)
-            
-            
-        
-            
-                        
-                    
-                    
-                
-        
-    
+        break

@@ -1,19 +1,19 @@
 import datetime
 class sasFile:
 
-    def readDesiredTask(self):
+    def readCurrentTask(self):
         try:
-            file = open('desiredTask.txt','r')
-            desiredTask = file.read(1)
+            file = open('currentTask.txt','r')
+            currentTask = file.read(1)
             file.close()
         except Exception as e:
-            self.updateDesiredTask('1')
-            self.updateExceptionMessage("sasFile{readDesiredTask}",str(e))
-            desiredTask = '1'
-        return desiredTask
+            self.updateCurrentTask('1')
+            self.updateExceptionMessage("sasFile{readCurrentTask}",str(e))
+            currentTask = '1'
+        return currentTask
 
-    def updateDesiredTask(self,command):
-        file = open('desiredTask.txt', 'w+')
+    def updateCurrentTask(self,command):
+        file = open('currentTask.txt', 'w+')
         file.write(command)
         file.close()
         
@@ -41,23 +41,7 @@ class sasFile:
         file = open('exceptionMessage.txt', 'a+')
         file.write(message)
         file.close()
-
-    def updateConfigUpdateStatus(self,status):
-        file = open('configUpdateStatus.txt', 'w+')
-        file.write(status)
-        file.close()
-
-    def readConfigUpdateStatus(self):
-        try:
-            file = open('configUpdateStatus.txt','r')
-            configStatus = file.read(1)
-            file.close()
-            return configStatus
-        except Exception as e:
-            self.updateConfigUpdateStatus('0')
-            self.updateExceptionMessage("sasFile{readConfigUpdateStatus}",str(e))
-            return '0'
-
+        
     def readStoredIndex(self):
         try:           
             file = open('storedIndex.txt','r')
@@ -74,27 +58,6 @@ class sasFile:
         file = open('storedIndex.txt', 'w+')
         file.write(storedIndex)
         file.close()
-
-#    def updateHearBitURL(self,url):
-#        file = open('heartBitUrl.txt', 'w+')
-#        file.write(url)
-#        file.close()
-#    
-#    def readStartTime(self):
-#        try:           
-#            file = open('startTime.txt','r')
-#            startTime = file.readline()
-#            file.close()
-#        except Exception as e:
-#            self.updateStartTime("")
-#            startTime = None
-#            self.updateExceptionMessage("sasFile{readStartTime}: ",str(e))
-#        return startTime
-#    
-#    def updateStartTime(self,startTime):
-#        file = open('startTime.txt', 'w+')
-#        file.write(startTime)
-#        file.close()
         
     def readRequestId(self):
         try:           
@@ -129,7 +92,6 @@ class sasFile:
         file.write(str(data))
         file.close()
         
-    
     def readCurrentVersion(self):
         file = open('currentVersion.txt', 'r')
         version = file.readline()
@@ -179,5 +141,23 @@ class sasFile:
     def writeCurrentEthernetSettings(self,lines):
         file = open('ethernet.txt','w+')
         file.writelines(lines)
+        file.close()
+        
+    def readNetworkStatus(self):
+        try:
+            file = open('networkStatus.txt','r')
+            networkStatus = file.readline()
+            networkStatus = networkStatus.replace('\n','')
+            file.close()
+        except Exception as e:
+            self.updateExceptionMessage("sasFile{readNetworkStatus}: ",str(e))
+            self.updateNetworkStatus("1","1")
+            networkStatus = '1-1'
+        return networkStatus
+    
+    def updateNetworkStatus(self,primary,secondary):
+        networkStatus = primary + '-' + secondary
+        file = open('networkStatus.txt', 'w+')
+        file.writelines(networkStatus)
         file.close()
         

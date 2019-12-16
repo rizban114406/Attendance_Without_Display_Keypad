@@ -92,19 +92,6 @@ class sasDatabase:
         else:
             return 0
 
-#    def checkEmployeeInfoTable(self,employee,companyId,database): # 
-#        curs = database.cursor()
-#        curs.execute ("SELECT fingerId \
-#                       FROM employeeInfoTable \
-#                       WHERE employee = ? and companyId = ?", \
-#                      (str(employee),int(companyId),))
-#        desiredDetails = curs.fetchone()
-#        print(desiredDetails)
-#        if (desiredDetails != None):
-#            return "Registered"
-#        else:
-#            return "Not Registered"
-
     def insertNewEmployee(self,\
                           uniqueId,\
                           fingerId,\
@@ -157,10 +144,7 @@ class sasDatabase:
             self.databaseCommit(database)
             t.sleep(1)
         except Exception:
-            print("Does not Exists")
-#        curs.execute("DROP TABLE IF EXISTS tempTableToSync")
-#        self.databaseCommit(database)
-#        t.sleep(0.5)        
+            print("Does not Exists")        
         curs.execute("CREATE TABLE tempTableToSync(id             INTEGER PRIMARY KEY AUTOINCREMENT,\
                                                    uniqueId       INTEGER,\
                                                    fingerId       INTEGER, \
@@ -235,9 +219,6 @@ class sasDatabase:
             t.sleep(1)
         except Exception:
             print("Does not Exists")
-#        curs.execute("DROP TABLE IF EXISTS eventListTable")
-#        self.databaseCommit(database)
-#        t.sleep(0.5)
         curs.execute("CREATE TABLE eventListTable(uniqueId      INTEGER,\
                                                   fingerOrCard  INTEGER,\
                                                   eventDateTime DATETIME,\
@@ -257,15 +238,6 @@ class sasDatabase:
             self.databaseCommit(database)
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{deleteFromEventListTable}: ",str(e))
-
-#    def getAllEventData(self,startTime,database):
-#        curs = database.cursor()
-#        curs.execute("SELECT * From eventListTable WHERE startTime = ?",(startTime,))
-#        desiredDetails = curs.fetchall()
-#        print(desiredDetails)
-#        if desiredDetails != None:
-#            return desiredDetails
-#        return []
     
     def getAllEventData(self,database):
         curs = database.cursor()
@@ -275,15 +247,6 @@ class sasDatabase:
         if desiredDetails != None:
             return desiredDetails
         return []
-    
-#    def checkEventDataStartTime(self,startTime,database):
-#        curs = database.cursor()
-#        curs.execute("SELECT * From eventListTable WHERE startTime = ?",(startTime,))
-#        desiredDetails = curs.fetchone()
-#        print(desiredDetails)
-#        if (desiredDetails != None):
-#            return 1
-#        return 0
 
     def insertEventTime(self,\
                         uniqueId,\
@@ -315,9 +278,6 @@ class sasDatabase:
             t.sleep(1)
         except Exception:
             print("Does not Exists")
-#        curs.execute("DROP TABLE IF EXISTS employeeCardInfo")
-#        self.databaseCommit(database)
-#        t.sleep(0.5)
         curs.execute("CREATE TABLE employeeCardInfo(id        INTEGER PRIMARY KEY AUTOINCREMENT,\
                                                    uniqueId   INTEGER,\
                                                    cardNumber INTEGER, \
@@ -359,23 +319,6 @@ class sasDatabase:
         curs.execute("Drop Table employeeCardInfo")
         self.databaseCommit(database)
 
-#    def checkEmployeeCardInfoTableToDelete(self,uniqueId,companyId,database): # 
-#        curs = database.cursor()
-#        try:
-#            curs.execute ("SELECT cardNumber \
-#                           FROM employeeCardInfo \
-#                           WHERE uniqueId = ? and companyId = ?",(int(uniqueId),int(companyId),))
-#            
-#            desiredDetails = curs.fetchone()
-#            if (desiredDetails != None):
-#                self.deleteFromEmployeeCardInfoTable(uniqueId,0,database)
-#                self.databaseCommit(database)
-#            return 1
-#        except Exception as e:
-#            #print str(e)
-#            fileObject.updateExceptionMessage("sasDatabase{checkEmployeeCardInfoTableToDelete}",str(e))
-#            return 0
-
     def insertIntoEmployeeCardInfoTable(self,uniqueId,\
                                         cardNumber,\
                                         companyId,\
@@ -415,9 +358,6 @@ class sasDatabase:
             self.databaseCommit(database)
         except Exception:
             print("Does not Exists")
-#        curs.execute("DROP TABLE IF EXISTS configurationTable")
-#        self.databaseCommit(database)
-#        t.sleep(.5)
         curs.execute("CREATE TABLE configurationTable(id             INTEGER PRIMARY KEY AUTOINCREMENT,\
                                                      baseUrl         TEXT,\
                                                      subUrl          TEXT,\
@@ -433,7 +373,7 @@ class sasDatabase:
         if (desiredDetails != None):
             return desiredDetails
         else:
-            return ['0','0']
+            return ['','']
 
     def insertIntoConfigurationTable(self,baseUrl,\
                                         subUrl,\
@@ -477,15 +417,6 @@ class sasDatabase:
             return 1
         else:
             return 0
-        
-    def getSecondaryAddressInfo(self, database):
-        curs = database.cursor()
-        curs.execute ("SELECT * FROM configurationTable WHERE id = 2") #1=primary, 2=seondary
-        desiredDetails = curs.fetchone()
-        if (desiredDetails != None):
-            return desiredDetails
-        else:
-            return '0'
         
     def updateConfigurationTable(self, baseURL, subURL, database):
         curs = database.cursor()
@@ -542,9 +473,6 @@ class sasDatabase:
             t.sleep(1)
         except Exception:
             print("Does not Exists")
-#        curs.execute("DROP TABLE IF EXISTS deviceInfoTable")
-#        self.databaseCommit(database)
-#        t.sleep(.5)
         curs.execute("CREATE TABLE deviceInfoTable(id              INTEGER PRIMARY KEY AUTOINCREMENT,\
                                                    hardwareId      TEXT,\
                                                    deviceId        INTEGER,\
@@ -560,7 +488,7 @@ class sasDatabase:
                                   deviceId,\
                                   osVersion,\
                                   ipAddress,\
-                                  database):
+                                  database): # Insert Device Info into Database
         curs = database.cursor()
         try:
             curs.execute("INSERT INTO deviceInfoTable(hardwareId,\
@@ -595,7 +523,7 @@ class sasDatabase:
         rowNum = curs.fetchone()
         return int(rowNum[0])
 
-    def getDeviceId(self,database):
+    def getDeviceId(self,database): # Get Device Id From Database
         curs = database.cursor()
         curs.execute ("SELECT deviceId FROM deviceInfoTable WHERE id = 1")
         desiredDetails = curs.fetchone()
@@ -605,7 +533,7 @@ class sasDatabase:
         else:
             return 0
     
-    def getAllDeviceInfo(self,database):
+    def getAllDeviceInfo(self,database): # Get All Device Info from Database
         curs = database.cursor()
         curs.execute ("SELECT * FROM deviceInfoTable WHERE id = 1")
         desiredDetails = curs.fetchone()
@@ -652,65 +580,6 @@ class sasDatabase:
             return 0
         
     ####################### All Functions Regarding Device Info Table ###################
-    
-#    def createTableTimeConfig(self,database):
-#        curs = database.cursor()
-#        try:      
-#            curs.execute("DROP TABLE timeConfig")
-#            self.databaseCommit(database)
-#            t.sleep(1)
-#        except Exception:
-#            print("Does not Exists")
-#        curs.execute("CREATE TABLE timeConfig(startTime   DATETIME,\
-#                                              restartTime DATETIME,\
-#                                              duration    TEXT)")
-#        self.databaseCommit(database)
-#    
-#    def insertIntoTimeConfig(self, startTime, database):
-#        curs = database.cursor()
-#        curs.execute("INSERT INTO timeConfig(startTime,\
-#                                             restartTime,\
-#                                             duration) VALUES (?,"","")",\
-#                                             (startTime))
-#        self.databaseCommit(database)
-#        
-#    def updateRestartTimeConfig(self, startTime, restartTime, database):
-#        curs = database.cursor()
-#        curs.execute ("UPDATE timeConfig SET restartTime = ? \
-#                       WHERE startTime = ?",(startTime, restartTime))
-#        self.databaseCommit(database)
-#    
-#    def updateDurationTimeConfig(self, startTime, duration, database):
-#        curs = database.cursor()
-#        curs.execute ("UPDATE timeConfig SET duration = ? \
-#                       WHERE startTime = ?",(str(duration), startTime))
-#        self.databaseCommit(database)
-#    
-#    def getRowWithNoDurationTimeConfig(self,database):
-#        curs = database.cursor()
-#        curs.execute ("SELECT startTime, restartTime FROM timeConfig WHERE duration = """)
-#        desiredDetails = curs.fetchall()
-#        print(desiredDetails)
-#        if (desiredDetails != None):
-#            return desiredDetails
-#        else:
-#            return '0'
-#    
-#    def getDataTimeConfig(self,database):
-#        curs = database.cursor()
-#        curs.execute ("SELECT * FROM timeConfig WHERE duration != """)
-#        desiredDetails = curs.fetchall()
-#        print(desiredDetails)
-#        if (desiredDetails != None):
-#            return desiredDetails
-#        else:
-#            return '0'
-#    
-#    def deleteFromTimeConfig(self,startTime,database): # Delete From Employee Infromation Table After Deleting Employee
-#        curs = database.cursor()
-#        curs.execute("Delete FROM timeConfig \
-#                      WHERE startTime = ?",(startTime))
-#        self.databaseCommit(database)
      
     ####################### All Functions Regarding Wifi Networks Info Table ###################
     
