@@ -130,7 +130,7 @@ class sasDatabase:
                        FROM employeeInfoTable \
                        WHERE fingerId = ?",(positionNumber,))
         desiredDetails = curs.fetchone()
-        print(desiredDetails)
+#        print("Desired Details of Employee: {}".format(desiredDetails))
         if (desiredDetails != None):
             return desiredDetails
         else:
@@ -251,20 +251,20 @@ class sasDatabase:
     def insertEventTime(self,\
                         uniqueId,\
                         fingerOrCard,\
-                        EventDateTime,\
-                        EventType,\
+                        eventDateTime,\
+                        eventType,\
                         companyId,\
                         database):
         curs = database.cursor()
         curs.execute("INSERT INTO eventListTable(uniqueId,\
                                                  fingerOrCard,\
-                                                 EventDateTime,\
-                                                 EventType,\
+                                                 eventDateTime,\
+                                                 eventType,\
                                                  companyID) VALUES (?,?,?,?,?)",\
                                                 (int(uniqueId),\
                                                  int(fingerOrCard),\
-                                                 EventDateTime,\
-                                                 EventType,\
+                                                 eventDateTime,\
+                                                 eventType,\
                                                  int(companyId),))
         self.databaseCommit(database)
 #    ######################### All Functions Regarding Event Information Table ####################

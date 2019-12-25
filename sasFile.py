@@ -83,7 +83,9 @@ class sasFile:
             file.close()
             info = requestInfo.split('$')
         except Exception as e:
+            self.updateEnrollingUserInfo("0","0")
             self.updateExceptionMessage("sasFile{readEnrollingUserInfo}: ",str(e))
+            info = ["0","0"]
         return (info[0],info[1])
         
     def updateEnrollingUserInfo(self, uniqueId, selectedCompany):

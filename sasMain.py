@@ -68,7 +68,7 @@ def configureFingerPrint():
             else:
                 break
         except Exception as e:
-            #lcdPrint.printExceptionMessage(str(e))
+            print("Exception From : {}\n Exception Message: {}".format("configureFingerPrint",str(e)))
             fileObject.updateExceptionMessage("sasMain{configureFingerPrint}: ",str(e))
             os.system('sudo pkill -f sasMain.py')
     return f
@@ -135,6 +135,7 @@ def checkEmployeeInfoTable(dbObject,database):
 #                f.deleteTemplate(int(deleteId))
 #                lock.release()
     except Exception as e:
+        print("Exception From : {}\n Exception Message: {}".format("checkEmployeeInfoTable",str(e)))
         fileObject.updateExceptionMessage("sasMain{checkEmployeeInfoTable}: ",str(e))
         
 def syncUsersToSensor(f,dbObject,database):
@@ -166,6 +167,7 @@ def syncUsersToSensor(f,dbObject,database):
             fileObject.updateSyncStatus('0')
             
     except Exception as e:
+        print("Exception From : {}\n Exception Message: {}".format("syncUsersToSensor",str(e)))
         fileObject.updateExceptionMessage("sasMain{syncUsersToSensor}: ",str(e))
         os.system('sudo pkill -f sasMain.py')
 #        fileObject.updateCurrentTask('1')
@@ -198,6 +200,7 @@ def getRFCardInformation(deviceId,dbObject,database):
                 return "Already Synced"
         dbObject.databaseClose(database)
     except Exception as e:
+        print("Exception From : {}\n Exception Message: {}".format("getRFCardInformation",str(e)))
         fileObject.updateExceptionMessage("sasMain{getRFCardInformation}: ",str(e))
         return "Error"
 #        os.system('sudo pkill -f sasMain.py')
@@ -239,6 +242,7 @@ def getFingerprintInformation(deviceId,dbObject,database):
                 return "Already Synced"
 #        dbObject.databaseClose(database)
     except Exception as e:
+        print("Exception From : {}\n Exception Message: {}".format("getFingerprintInformation",str(e)))
         fileObject.updateExceptionMessage("sasMain{getFingerprintInformation}: ",str(e))
         return "Error"
 #        os.system('sudo pkill -f sasMain.py')
@@ -266,6 +270,7 @@ def syncronizationProcess():
             else:
                 t.sleep(5)
         except Exception as e:
+            print("Exception From : {}\n Exception Message: {}".format("syncronizationProcess",str(e)))
             fileObject.updateExceptionMessage("sasMain{syncronizationProcess}: ",str(e))
     
         
@@ -288,6 +293,7 @@ def sendPusherCommand(hardwareId,command,requestId):
     pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
     
 def takefingerPrint(f,currentDateTime):
+    print("Inside Function: {}".format("takefingerPrint"))
     x = False
     continueEnrollment = False
     try:
@@ -298,47 +304,64 @@ def takefingerPrint(f,currentDateTime):
                 turnLEDON('R')
                 turnOnBuzzer(0)
                 break
+            print("Flag For Device Response x: {}".format(x))
+            print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
             turnLEDON('OFF')
             t.sleep(1)
             turnLEDON('W')
+        print("Flag For Device Response x: {}".format(x))
+        print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
         turnLEDON('OFF')
         return (x,continueEnrollment)
     except Exception as e:
-        fileObject.updateExceptionMessage("sasMain{fingerPrint}: ",str(e))
+        print("Exception From : {}\n Exception Message: {}".format("takefingerPrint",str(e)))
+        fileObject.updateExceptionMessage("sasMain{takefingerPrint}: ",str(e))
         continueEnrollment = False
         return (x,continueEnrollment)
 
 def waitToRemoveFinger(f,currentDateTime):
+    print("Inside Function: {}".format("waitToRemoveFinger"))
     x = False
     continueEnrollment = False
     try:
         while ( f.readImage() == True and x == False): # Check if the User is Still Keeping the Finger on the Sensor
             x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
             if (fileObject.readCurrentTask() == "5"):
+                print("Device Current Task: {}".format(currentTask))
                 continueEnrollment = False
                 break
+            print("Flag For Device Response x: {}".format(x))
+            print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
             t.sleep(1)
         print("Finger Removed")
+        print("Flag For Device Response x: {}".format(x))
+        print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
         return (x,continueEnrollment)
     except Exception as e:
-        fileObject.updateExceptionMessage("sasMain{fingerPrint}: ",str(e))
+        print("Exception From : {}\n Exception Message: {}".format("waitToRemoveFinger",str(e)))
+        fileObject.updateExceptionMessage("sasMain{waitToRemoveFinger}: ",str(e))
         continueEnrollment = False
         return (x,continueEnrollment)
     
 def waitForServerInstructionToCome(desiredCommand, currentDateTime):
+    print("Inside Function: {}".format("waitForServerInstructionToCome"))
     x = False
     y = False
     try:
         currentDateTimeForResponse,currentTimeForResponse = checkCurrentDateTime() 
         while (1): # Waiting Untill Command is Received from the Server or Enrollment Cancelled or Enrollment Timeout or Response Timeout
             x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT)
-            currentTask = fileObject.readCurrentTask()                       
+            currentTask = fileObject.readCurrentTask()
+            print("Device Current Task: {}".format(currentTask))                      
             y = calculateTimeDifference(currentDateTimeForResponse,REQUESTTIMEOUT) # Checking for Response Timeout
+            print("Flag For Server Response y: {}".format(y))
+            print("Flag For Device Response x: {}".format(x))
             if (currentTask == desiredCommand or currentTask == '5' or x == True or y == True): # Command Received or Cancelled or Enrollment Timeout or Response Timeout
                 break
             t.sleep(0.5)
         return (currentTask, x, y)
     except Exception as e:
+        print("Exception From : {}\n Exception Message: {}".format("waitToRemoveFinger",str(e)))
         fileObject.updateExceptionMessage("sasMain{waitForServerInstructionToCome}: ",str(e))
         y = True
         return (currentTask, x, y)
@@ -356,14 +379,17 @@ def enrollmentLEDIndicator(color):
         
     
 def takeFingerprintToEnroll(f,currentDateTime,requestId):
+    print("Inside Function: {}".format("takeFingerprintToEnroll"))
     x = False # Flag to check Enrollment Timeout
     y = False # Flag to Check Response Timeout
-    print(y)
-    print(x)
     continueEnrollment = True # Flag to Check If Enrollment Process is Cancelled or Not
+    print("Flag For Server Response y: {}".format(y))
+    print("Flag For Device Response x: {}".format(x))
+    print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
     try:
         x,continueEnrollment = takefingerPrint(f,currentDateTime)
-        
+        print("Flag For Device Response x: {}".format(x))
+        print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
         if (x == False  and continueEnrollment == True): #If Enrollment is Not Timed Out and Enrollment is Not Cancelled
             print("Convert the Print")
             f.convertImage(0x01) #Save the Fingerprint to Sensor Buffer
@@ -372,6 +398,7 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
             positionNumber = result[0]
             
             if ( positionNumber >= 0 ): # If Template Exists positonNumber will be > 0
+                print("No Match Found")
                 sendPusherCommand(hardwareId,"FINGER_ALREADY_EXISTS",requestId) # Send Already Exists Command to the Server
                 return "Enrollment Cancelled"
             else:
@@ -380,7 +407,8 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                 print("First Finger Taken")
                 
                 x,continueEnrollment = waitToRemoveFinger(f,currentDateTime)
-                    
+                print("Flag For Device Response x: {}".format(x))
+                print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))    
                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
                     sendPusherCommand(hardwareId,"REMOVED1",requestId) # Send Removed Command To the Server First Time
                     t.sleep(1)
@@ -393,23 +421,29 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                     
                     elif y == True: # Response Timeout Check
                         sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout Response to the Server
+                        print("Enrollment Timeout")
                         return "Request Time Out"
                     
                     elif x == False : # If Enrollment is Not Timed Out
                         x,continueEnrollment = takefingerPrint(f,currentDateTime)
+                        print("Flag For Device Response x: {}".format(x))
+                        print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))    
                         
                         if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
                             f.convertImage(0x02)
                             if ( f.compareCharacteristics() == 0): # If First and Second Do Not Matche
                                 sendPusherCommand(hardwareId,"FINGERS_DO_NOT_MATCH",requestId) # Send Finger Not Matched to the Server
+                                print("Finger Do not match Second Time")
                                 return "Finger Did Not Match Second Time"
                             
                             else:
+                                print("Second Finger Taken")
                                 sendPusherCommand(hardwareId,"SECOND_FINGER_TAKEN",requestId) # Send Second Time Finger Taken To the Server
                                 enrollmentLEDIndicator('G')
                                 
                                 x,continueEnrollment = waitToRemoveFinger(f,currentDateTime)
-                                
+                                print("Flag For Device Response x: {}".format(x))
+                                print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
                                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
                                     sendPusherCommand(hardwareId,"REMOVED2",requestId)
                                     t.sleep(1)
@@ -419,18 +453,22 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                                     if (currentTask == "5"): # Enrollment Cancelled Check
                                         return "Enrollment Cancelled"
                                     elif y == True: # Response Timeout
-                                        sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout to the Server 
+                                        sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout to the Server
+                                        print("Enrollment Timeout")
                                         return "Request Time Out"
                                     elif x == False:
                                         
                                         x,continueEnrollment = takefingerPrint(f,currentDateTime)
-                                        
+                                        print("Flag For Device Response x: {}".format(x))
+                                        print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
                                         if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
                                             f.convertImage(0x01)
                                             if ( f.compareCharacteristics() == 0): # Check Finger Matched 
                                                 sendPusherCommand(hardwareId,"FINGERS_DO_NOT_MATCH",requestId) # Send Not Matched to the Server
+                                                print("Finger Do not match Third Time")
                                                 return "Finger Did Not Match Third Time"
                                             else:
+                                                print("Finger Matched")
                                                 sendPusherCommand(hardwareId,"THIRD_FINGER_TAKEN",requestId) # Send Third Finger Taken to THe Server
                                                 enrollmentLEDIndicator('G')
                                                 return "Finger Matched"
@@ -456,39 +494,47 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
             sendPusherCommand(hardwareId,"TIME_OUT",requestId)
             return "Time Out"
     except Exception as e:
+        print("Exception From : {}\n Exception Message: {}".format("takeFingerprintToEnroll",str(e)))
         fileObject.updateExceptionMessage("sasMain{takeFingerprintToEnroll}: ",str(e))
         sendPusherCommand(hardwareId,"TIME_OUT",requestId)
         return "Time Out"
 
 def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,database):
+    print("Inside Function: {}".format("createNewTemplate"))
     characterMatrix = f.downloadCharacteristics()
     matrix = ""
     for i in characterMatrix:
         matrix = matrix+ str(i)+ "-"
     receivedData = apiObject.getFingerId(uniqueId,matrix,selectedCompany,deviceId)
-    print(receivedData)
+    print("Received Data {}: ".format(receivedData))
     if receivedData[0] == "Success":
-        f.storeTemplate(int(receivedData[1][3]),0x01)
+        f.storeTemplate(int(receivedData[1][1]),0x01)
         dbObject.insertNewEmployee(receivedData[1][0], \
                                    receivedData[1][1], \
                                    selectedCompany, \
                                    database)
+        print("Employee Added Successfully")
         return "1"
     else:
         return receivedData[0]
         
 def enrollNewEmployee(f,deviceId,dbObject,database):
+    print("Inside Function: {}".format("enrollNewEmployee"))
     currentDateTime,currentTime = checkCurrentDateTime()
+    print("Current Datetime: {}".format(currentDateTime))
+    print("Current time: {}".format(currentTime))
     uniqueId,selectedCompany= fileObject.readEnrollingUserInfo()
     employeeId = "2-265"
     requestId = fileObject.readRequestId()
-    print(uniqueId)
-    print(selectedCompany)
-    print(requestId)
+    print("UniqueId Received: {}".format(uniqueId))
+    print("Selected Company: {}".format(selectedCompany))
+    print("Request ID: {}".format(requestId))
+ 
     try:
         fingerInput = takeFingerprintToEnroll(f,currentDateTime,requestId)
         if fingerInput == "Finger Matched" :
             status = createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,database)
+            print("Registration Status: {}".format(status))
             if status == "1":
                 sendPusherCommand(hardwareId,"REGISTED_SUCCESSFULLY",requestId)
                 enrollmentLEDIndicator('G')
@@ -504,10 +550,11 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
             enrollmentLEDIndicator('R')
             fileObject.updateRequestId("0")
     except Exception as e:
-         fileObject.updateExceptionMessage("sasMain{enrollNewEmployee}: ",str(e))
-         enrollmentLEDIndicator('R')
-         fileObject.updateRequestId("0")
-         sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+        print("Exception From : {}\n Exception Message: {}".format("enrollNewEmployee",str(e)))
+        fileObject.updateExceptionMessage("sasMain{enrollNewEmployee}: ",str(e))
+        enrollmentLEDIndicator('R')
+        fileObject.updateRequestId("0")
+        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
 
 def turnLEDON(color):
     if color == 'R':
@@ -552,7 +599,10 @@ def turnOnBuzzer(access):
     GPIO.output(buzzerPin, 0)
     
 def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):
+    print("Inside Function: {}".format("createEventLogg"))
     currentDateTime,currentTime = checkCurrentDateTime()
+    print("Current Datetime: {}".format(currentDateTime))
+    print("Current time: {}".format(currentTime))
     if attendanceFlag == '2':
         employeeDetails = dbObject.getEmployeeDetailsFromCard(employeeCardorFingerNumber,database)
         print("Punched Employee ID: {}".format(employeeDetails))
@@ -592,38 +642,90 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag, \
                                      employeeDetails[1], \
                                      database)
-            turnLEDON('G') #GREEN
-            turnOnBuzzer(1)
-            t.sleep(.5)
-            turnLEDON('OFF') #OFF
+            print("Event Created Successfully")
+            accessGranted()
             return 1
         else:
             print("No Finger Record Found")
-            turnLEDON('R') #RED
-            turnOnBuzzer(0)
-            t.sleep(.5)
-            turnLEDON('OFF') #OFF
+            accessDenied()
             return 0
-        
+
+def accessDenied():
+    turnLEDON('R') #RED
+    turnOnBuzzer(0)
+    t.sleep(.5)
+    turnLEDON('OFF') #OFF
+    
+def accessGranted():
+    turnLEDON('G') #GREEN
+    turnOnBuzzer(1)
+    t.sleep(.5)
+    turnLEDON('OFF') #OFF
+    
 def matchFingerPrint(f,dbObject,database):
     try:
         f.convertImage(0x01)
         result = f.searchTemplate()
         positionNumber = result[0]
-        print(positionNumber)
+        print("Position Number Found: {}".format(positionNumber))
         if (positionNumber == -1):
             print("No Finger Record Found")
-            turnLEDON('R') #RED
-            turnOnBuzzer(0)
-            t.sleep(.5)
-            turnLEDON('OFF') #OFF
+            accessDenied()
         else:
             fingerFlag = createEventLogg(positionNumber,'1',dbObject,database)
             if fingerFlag == 0:
                 f.deleteTemplate(positionNumber)
     except Exception as e:
+        print("Exception From : {}\n Exception Message: {}".format("matchFingerPrint",str(e)))
         fileObject.updateExceptionMessage("sasMain{matchFingerPrint}",str(e))
-        
+    
+def workWithFingerPrintSensor():
+    global currentTask
+    global syncStatus
+    while True:
+        try:
+            f = configureFingerPrint()
+            print("Connected With Fingerprint Sensor From workWithFingerPrintSensor")
+            from sasDatabase import sasDatabase
+            dbObject = sasDatabase()
+            database = dbObject.connectDataBase()
+            print("Connected With Database From workWithFingerPrintSensor")
+            while True:  
+                while (f.readImage() == False):
+                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
+                    currentTask = fileObject.readCurrentTask()
+                    syncStatus = fileObject.readSyncStatus()
+                    print("Device Current Task: {}".format(currentTask))
+                    print("Device Syncronization Request Flag: {}".format(syncStatus))
+                    if (currentTask == '2' or syncStatus == '2'):
+                        break
+                    t.sleep(.8)
+                lock.acquire()
+                print("Inside Finger Recognition Part")
+                currentTask = fileObject.readCurrentTask()
+                if currentTask == '1'and syncStatus != '2':
+                    fileObject.updateCurrentTask('6')
+                    currentTask = '6'
+                print("Modified Task is: {}".format(currentTask))    
+                if currentTask == '6':
+                    print("Inside Finger Match Part")
+                    matchFingerPrint(f,dbObject,database)
+                    fileObject.updateCurrentTask('1')                  
+                elif currentTask == '2': # Check Command Script
+                    deviceId = dbObject.getDeviceId()
+                    enrollNewEmployee(f,deviceId,dbObject,database)
+                    fileObject.updateCurrentTask('1')
+                elif syncStatus == '2':
+                    print("Sync Process")
+                    syncUsersToSensor(f,dbObject,database)
+                lock.release()
+                t.sleep(1)
+    #            print("A finger Is read")
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasMain{workWithFingerPrintSensor}: ",str(e))
+            os.system('sudo pkill -f sasMain.py')
+            lock.release()
+            
 def readFromRFIDScanner():
     ser = serial.Serial("/dev/serial0")
     try:
@@ -639,48 +741,6 @@ def readFromRFIDScanner():
         os.system('sudo pkill -f sasMain.py')
         return "NA"
     
-def workWithFingerPrintSensor(f):
-    global currentTask
-    global syncStatus
-    while True:
-        try:
-            from sasDatabase import sasDatabase
-            dbObject = sasDatabase()
-            database = dbObject.connectDataBase()
-            while True:  
-                while (f.readImage() == False):
-#                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
-                    currentTask = fileObject.readCurrentTask()
-                    syncStatus = fileObject.readSyncStatus()
-                    print(currentTask)
-                    print(syncStatus)
-                    if (currentTask == '2' or syncStatus == '2') :
-                        break
-                    t.sleep(.8)
-                lock.acquire()
-                currentTask = fileObject.readCurrentTask()
-                if currentTask == '1'and syncStatus != '2':
-                    fileObject.updateCurrentTask('6')
-                    currentTask = '6'
-    #            print("Modified Task is {}".format(currentTask))    
-                if currentTask == '6':
-                    matchFingerPrint(f,dbObject,database)
-                    fileObject.updateCurrentTask('1')                  
-                elif currentTask == '2':
-                    deviceId = dbObject.getDeviceId()
-                    enrollNewEmployee(f,deviceId,dbObject,database)
-                    fileObject.updateCurrentTask('1')
-                elif syncStatus == '2':
-                    print("Sync Process")
-                    syncUsersToSensor(f,dbObject,database)
-                lock.release()
-                t.sleep(1)
-    #            print("A finger Is read")
-        except Exception as e:
-            fileObject.updateExceptionMessage("sasMain{workWithFingerPrintSensor}: ",str(e))
-            os.system('sudo pkill -f sasMain.py')
-            lock.release()
-        
 def workWithRFSensor():
     global currentTask
     while True:
@@ -725,8 +785,7 @@ def functionKillProgram():
         
 if __name__ == '__main__':
     try:
-        f = configureFingerPrint()
-        fingerPrint = threading.Thread(target = workWithFingerPrintSensor,args = (f,))
+        fingerPrint = threading.Thread(target = workWithFingerPrintSensor)
         syncFingerPrint = threading.Thread(target = syncronizationProcess)
         rfSensor = threading.Thread(target = workWithRFSensor)
         checkToKill = threading.Thread(target = functionKillProgram)
