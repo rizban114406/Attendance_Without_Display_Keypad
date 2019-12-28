@@ -40,7 +40,6 @@ class sasAllAPI:
             print("Data Received {}".format(r.content))
             output = json.loads(r.content)
             if (output['status'] == 'success'):
-                receivedData.append(output['data']['uniqueid'])
                 receivedData.append(output['data']['fingernumber'])
                 return ("Success",receivedData)
             else:
@@ -110,8 +109,6 @@ class sasAllAPI:
             print("Data Received {}".format(r.content))
             output = json.loads(r.content)
             if (output['status'] == 'success'):
-                if output['sync_status'] == 0:
-                    fileObject.updateConfigUpdateStatus('0')
                 return output
             else:
                 return "Some Thing Is Wrong"

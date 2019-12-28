@@ -187,7 +187,7 @@ class sasDatabase:
         try:     
             curs.execute("SELECT uniqueId,fingerId From tempTableToSync Where desiredTask = '3'")
             desiredDetails = curs.fetchall()
-            print(desiredDetails)
+#            print(desiredDetails)
             if (desiredDetails != None):
                 return desiredDetails
             else:
@@ -199,9 +199,9 @@ class sasDatabase:
     def getInfoFromTempTableToEnrollOrUpdate(self,database): # Get Data From Temporary Table To Sync With The Server
         curs = database.cursor()
         try:        
-            curs.execute("SELECT * From tempTableToSync Where desiredTask = '1' Limit 200")
+            curs.execute("SELECT uniqueId,fingerId,fingerMatrix,companyId From tempTableToSync Where desiredTask = '1' Limit 500")
             desiredDetails = curs.fetchall()
-            print(desiredDetails)
+#            print(desiredDetails)
             if (desiredDetails != None):
                 return desiredDetails
             else:
@@ -340,9 +340,8 @@ class sasDatabase:
         curs.execute ("SELECT uniqueId,companyId \
                        FROM employeeCardInfo \
                        WHERE cardNumber = ?",(int(cardNumber),))
-        self.databaseCommit(database)
         desiredDetails = curs.fetchone()
-        print(desiredDetails)
+#        print(desiredDetails)
         if (desiredDetails != None):
             return desiredDetails
         else:

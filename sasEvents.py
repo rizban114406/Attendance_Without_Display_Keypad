@@ -12,20 +12,23 @@ if __name__ == '__main__':
     if deviceId != 0:
         if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
            dbObject.checkAddressUpdateRequired(1, database) == 0):
-            
+            print("Primary Check Update Request Server: 0, Check Update Required Local: 0")
             dbObject.resetUpdatedRequiredStatus(1)
             apiObjectPrimary.confirmUpdateRequest(deviceId)
             
-        if(database.checkSecondaryAddressAvailable() == 1 and \
+        if(dbObject.checkSecondaryAddressAvailable() == 1 and \
            dbObject.checkAddressUpdateRequired(2, database) == 0):
-            
+            print("Secondary Address Available: 1, Check Update Required Local: 0")
             if (apiObjectSecondary.checkUpdateRequest(deviceId) == 0):
+                print("Secondary Check Update Required Server: 0")
                 dbObject.resetUpdatedRequiredStatus(2)
                 apiObjectSecondary.confirmUpdateRequest(deviceId)
             
         while True:
             primary, secondary = fileObject.readNetworkStatus().split('-')
+            print("Primary Network: {}, Secondary Network: {}".format(primary,secondary))
             primaryStatus = apiObjectPrimary.checkServerStatus()
+            print("Primary Network: {}".format(primaryStatus))
             if (primaryStatus == 0 and primary == '1'):
                 primary = '0'
                 fileObject.updateNetworkStatus(primary,secondary)
@@ -33,20 +36,25 @@ if __name__ == '__main__':
             elif (primaryStatus == 1 and primary == '0'):
                 if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
                    dbObject.checkAddressUpdateRequired(1, database) == 0):
+                    print("Primary Check Update Request Server: 0, Check Update Required Local: 0")
                     dbObject.resetUpdatedRequiredStatus(1)
                     apiObjectPrimary.confirmUpdateRequest(deviceId)
                     primary = '1'
                     fileObject.updateNetworkStatus(primary,secondary)
             
-            if (database.checkSecondaryAddressAvailable() == 0):
+            if (dbObject.checkSecondaryAddressAvailable() == 1):
+                print("Secondary Address Available: 1")
                 secondaryStatus = apiObjectSecondary.checkServerStatus()
+                print("Secondary Network: {}".format(primaryStatus))
                 if (secondaryStatus == 0 and secondary == '1'):
                     secondary = '0'
                     fileObject.updateNetworkStatus(primary,secondary)
+                    fileObject.updateSyncConfStatus('1')
                     
                 elif (secondaryStatus == 1 and secondary == '0'):
                     if(apiObjectSecondary.checkUpdateRequest(deviceId) == 0 and \
                        dbObject.checkAddressUpdateRequired(2, database) == 0):
+                        print("Secondary Check Update Required Server: 1, Check Update Required Local: 0")
                         dbObject.resetUpdatedRequiredStatus(2)
                         apiObjectSecondary.confirmUpdateRequest(deviceId)
                         secondary = '1'
@@ -72,7 +80,7 @@ if __name__ == '__main__':
                                                       "companyid"           : str(reading[4])})
                             mainData = {"deviceinfo" : deviceInfoData, \
                                         "eventdata"  : eventInfoData}
-                                
+                            print("Event Data: {}".format(mainData))
                             if(len(allEventData) > 0):
                                 message = apiObjectSecondary.sendEventData(mainData)
                                 print(message)
@@ -94,6 +102,7 @@ if __name__ == '__main__':
                         dbObject.databaseClose(database)
                         fileObject.updateExceptionMessage("sasEvents{__main__}",str(e)) 
             else:
+                print("Secondary Address Available: 0")
                 dbObject.truncateEventListTable(database)
                 time.sleep(5)
             

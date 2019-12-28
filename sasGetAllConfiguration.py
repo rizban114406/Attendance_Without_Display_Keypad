@@ -303,10 +303,10 @@ if __name__ == '__main__':
                             print("deviceInfoUpdateStatus: {}, ethernetSetings: {}, \
                                   wifiSettings: {}".format(deviceInfoUpdateStatus,\
                                   ethernetSetings,wifiSettings))
-                            if (deviceInfoUpdateStatus == 2 \#or configInfoUpdateStatus == 2\
+                            if (deviceInfoUpdateStatus == 2 \ #or configInfoUpdateStatus == 2\
                                 or ethernetSetings == 2 or wifiSettings == 2):
                                 dbObject.resetServerUpdatedStatus(1)
-                            if (deviceInfoUpdateStatus != 0 \#and configInfoUpdateStatus != 0\
+                            if (deviceInfoUpdateStatus != 0 \ #and configInfoUpdateStatus != 0\
                                 and ethernetSetings != 0 and wifiSettings != 0):
                                 dbObject.setUpdatedRequiredStatus(2)
                                 

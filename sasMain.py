@@ -80,12 +80,12 @@ def checkCurrentDateTime():
     return (currentDateTime,currentTime)
 
 def createNewTemplateToSync(f,employeeInfo,dbObject,database):
-    x = str(employeeInfo[3]).split('-')
+    x = str(employeeInfo[2]).split('-')
     characteristics = []
     for i in range(0,len(x)-1):
         characteristics.append(int(x[i]))
     f.uploadCharacteristics(0x01,characteristics)
-    f.storeTemplate(int(employeeInfo[2]),0x01)
+    f.storeTemplate(int(employeeInfo[1]),0x01)
 #    import re
 #    sp = re.split(' |-|',str(employeeInfo[1]))
 #    if(len(sp) == 2):
@@ -93,20 +93,19 @@ def createNewTemplateToSync(f,employeeInfo,dbObject,database):
 #    else:
 #        employee = sp[0]
 
-    dbObject.insertNewEmployee(employeeInfo[1], \
-                               employeeInfo[2], \
-                               employeeInfo[5], \
+    dbObject.insertNewEmployee(employeeInfo[0], \
+                               employeeInfo[1], \
+                               employeeInfo[3], \
                                database)
-    dbObject.deleteFromTempTableToSync(employeeInfo[1],employeeInfo[2],database)
+    dbObject.deleteFromTempTableToSync(employeeInfo[0],employeeInfo[1],database)
         
 
 def updateListOfUsedTemplates(f):
-#    lock.acquire()
+    print("Inside Function: {}".format("updateListOfUsedTemplates"))
     tableIndex1 = f.getTemplateIndex(0)
     tableIndex2 = f.getTemplateIndex(1)
     tableIndex3 = f.getTemplateIndex(2)
     tableIndex4 = f.getTemplateIndex(3)
-#    lock.release()
     index = []
     for i in range(0, len(tableIndex1)):
         index.append(tableIndex1[i])
@@ -120,48 +119,46 @@ def updateListOfUsedTemplates(f):
     for i in range(0, len(index)):
         if (str(index[i]) == "True"):
             storedIndex = storedIndex + str(i) + '-'
+    print("Stored Index : {}".format(storedIndex))
     fileObject.updateStoredIndex(storedIndex)
     
 def checkEmployeeInfoTable(dbObject,database):
     try:    
+        print("Inside Function: {}".format("checkEmployeeInfoTable"))
         templatesStoredSensor = fileObject.readStoredIndex()
         templateStoredDatabase = dbObject.getEmployeeTemplateNumber(database)
         notListedTemplateNumber = list(set(templateStoredDatabase) - set(templatesStoredSensor))
+        print("Redundent Info: {}".format(notListedTemplateNumber))
         dbObject.deleteFromEmployeeInfoTableToSync(notListedTemplateNumber,database)
-#        notListedTemplateNumber = list(set(templatesStoredSensor) - set(templateStoredDatabase))
-#        for deleteId in notListedTemplateNumber:
-#            if deleteId != '':
-#                lock.acquire()
-#                f.deleteTemplate(int(deleteId))
-#                lock.release()
     except Exception as e:
         print("Exception From : {}\n Exception Message: {}".format("checkEmployeeInfoTable",str(e)))
         fileObject.updateExceptionMessage("sasMain{checkEmployeeInfoTable}: ",str(e))
         
 def syncUsersToSensor(f,dbObject,database):
     try:
+        print("Inside Function: {}".format("syncUsersToSensor"))
         getDataToDelete = dbObject.getInfoFromTempTableToDelete(database)
+        print("Finger Delete Request: {}".format(getDataToDelete))
         getDataToSync = dbObject.getInfoFromTempTableToEnrollOrUpdate(database)
+        print("Finger Enrollment Request: {}".format(getDataToSync))
         if (len(getDataToDelete) > 0 or len(getDataToSync) > 0):
             for reading in getDataToDelete:
                 turnLEDON('R+G')
-                prevId = dbObject.checkEmployeeInfoTableToDelete(reading[0],reading[1],database)
-                f.deleteTemplate(prevId)
+                f.deleteTemplate(int(reading[1]))
                 dbObject.deleteFromEmployeeInfoTable(reading[0],reading[1],database)
                 dbObject.deleteFromTempTableToSync(reading[0],reading[1],database)
-                t.sleep(.3)
+                print("Deleted Employee Info: {}".format(reading))
+                t.sleep(.2)
                 turnLEDON('OFF')
             for reading in getDataToSync:
                 turnLEDON('R+G')
-                prevId = dbObject.checkEmployeeInfoTableToDelete(reading[1],reading[2],database)
-                if prevId > 0:
-                    f.deleteTemplate(prevId)
-                    dbObject.deleteFromEmployeeInfoTable(reading[1],reading[2],database)
                 createNewTemplateToSync(f,reading,dbObject,database)
+                print("Enrolled Employee Info: {}".format(reading[0:2]))
                 t.sleep(.3)
                 turnLEDON('OFF')
             updateListOfUsedTemplates(f)
             fileObject.updateSyncStatus('0')
+            print("Finger Info Is Synced To the Device")
         else:
             print("Device Is Fully Synced With The Server")
             fileObject.updateSyncStatus('0')
@@ -174,12 +171,14 @@ def syncUsersToSensor(f,dbObject,database):
                          
 def getRFCardInformation(deviceId,dbObject,database):
     try:
-        print("Current syncronizationProcess getRFCardInformation Thread ID: {}".format(threading.current_thread()))
-        print("Program is Here")
+        print("Inside Function: {}".format("getRFCardInformation"))
         receivedData = dbObject.getInfoFromEmployeeCardInfoTable(database)
-        print(receivedData)
-        receivedDataSync = apiObject.getCardDataToSync(receivedData,deviceId)
-        print(receivedDataSync)
+        print("Existing Card Data: {}".format(receivedData))
+        if (apiObject.checkServerStatus() == 1):
+            receivedDataSync = apiObject.getCardDataToSync(receivedData,deviceId)
+        else:
+            receivedDataSync = "Server Error"
+        print("Received Data For Card Sync: {}".format(receivedDataSync))
         if(receivedDataSync == "Some Thing Is Wrong"):
             return "API Error"
         elif(receivedDataSync == "Server Error"):
@@ -192,8 +191,11 @@ def getRFCardInformation(deviceId,dbObject,database):
                                                              data['cardnumber'],\
                                                              data['companyid'],\
                                                              database)
+                    print("New Card Request Entered: {}".format(data))
                 for data in receivedDataSync['delete_request_enrollment']:
                     dbObject.deleteFromEmployeeCardInfoTable(data['uniqueid'],data['cardnumber'],database)
+                    print("Delete Card Request Entered: {}".format(data))
+                print("Card Info Is Synced From Server")
                 return "Synced From Server"   
             else:
                 print("Device Is Already Synced With The Server")
@@ -207,18 +209,22 @@ def getRFCardInformation(deviceId,dbObject,database):
         
 def getFingerprintInformation(deviceId,dbObject,database):
     try:
-        print("Current syncronizationProcess getFingerprintInformation Thread ID: {}".format(threading.current_thread()))
+        print("Inside Function: {}".format("getFingerprintInformation"))
 #        apiObject = sasAllAPI()
         checkEmployeeInfoTable(dbObject,database)
         receivedData = dbObject.getInfoFromEmployeeInfoTable(database)
-        receivedDataSync = apiObject.getDataToSync(receivedData,deviceId)
-        print(receivedData)
+        print("Existing Finger Data: {}".format(receivedData))
+        if (apiObject.checkServerStatus() == 1):
+            receivedDataSync = apiObject.getDataToSync(receivedData,deviceId)
+        else:
+            receivedDataSync = "Server Error"
+        print("Received Data For Finger Sync: {}".format(receivedDataSync))
         if(receivedDataSync == "Some Thing Is Wrong"):
             return "API Error"
         elif(receivedDataSync == "Server Error"):
             return "Server Down"
         else:
-            if(len(receivedDataSync['data']) > 0 or len(receivedDataSync['delete_request_enrollment']) > 0):
+            if(len(receivedDataSync['data']) > 0 or len(receivedDataSync['0']) > 0):
                 dbObject.createTableTempTableToSync(database)
                 for data in receivedDataSync['data']:
                     dbObject.insertToTempTableToSync(data['uniqueid'],\
@@ -227,6 +233,7 @@ def getFingerprintInformation(deviceId,dbObject,database):
                                                      '1',\
                                                      data['companyid'],\
                                                      database)
+                    print("Finger Request: {}".format(data))
                     t.sleep(0.1)
                 for data in receivedDataSync['delete_request_enrollment']:
                     dbObject.insertToTempTableToSync(data['uniqueid'],\
@@ -235,7 +242,9 @@ def getFingerprintInformation(deviceId,dbObject,database):
                                                      '3',\
                                                      '0',\
                                                      database)
+                    print("Finger Delete Request: {}".format(data))
                     t.sleep(0.1)
+                print("Card Info Is Synced From Server")
                 return "Synced From Server"          
             else:
                 print("Device Is Already Synced With The Server")
@@ -264,14 +273,16 @@ def syncronizationProcess():
                         fileObject.updateSyncStatus('2')
                     elif fingerSyncStatus == "Already Synced":
                         fileObject.updateSyncStatus('0')
-                    t.sleep(2)
+                    t.sleep(5)
                 else:
                     t.sleep(5)
+                dbObject.databaseClose()
             else:
                 t.sleep(5)
         except Exception as e:
             print("Exception From : {}\n Exception Message: {}".format("syncronizationProcess",str(e)))
             fileObject.updateExceptionMessage("sasMain{syncronizationProcess}: ",str(e))
+            dbObject.databaseClose()
     
         
 def calculateTimeDifference(currentDateTime,timeLimit):
@@ -499,7 +510,7 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
         sendPusherCommand(hardwareId,"TIME_OUT",requestId)
         return "Time Out"
 
-def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,database):
+def createNewTemplate(f,uniqueId,selectedCompany,deviceId,dbObject,database):
     print("Inside Function: {}".format("createNewTemplate"))
     characterMatrix = f.downloadCharacteristics()
     matrix = ""
@@ -508,9 +519,9 @@ def createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,da
     receivedData = apiObject.getFingerId(uniqueId,matrix,selectedCompany,deviceId)
     print("Received Data {}: ".format(receivedData))
     if receivedData[0] == "Success":
-        f.storeTemplate(int(receivedData[1][1]),0x01)
-        dbObject.insertNewEmployee(receivedData[1][0], \
-                                   receivedData[1][1], \
+        f.storeTemplate(int(receivedData[1][0]),0x01)
+        dbObject.insertNewEmployee(uniqueId, \
+                                   receivedData[1][0], \
                                    selectedCompany, \
                                    database)
         print("Employee Added Successfully")
@@ -524,7 +535,6 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
     print("Current Datetime: {}".format(currentDateTime))
     print("Current time: {}".format(currentTime))
     uniqueId,selectedCompany= fileObject.readEnrollingUserInfo()
-    employeeId = "2-265"
     requestId = fileObject.readRequestId()
     print("UniqueId Received: {}".format(uniqueId))
     print("Selected Company: {}".format(selectedCompany))
@@ -533,7 +543,7 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
     try:
         fingerInput = takeFingerprintToEnroll(f,currentDateTime,requestId)
         if fingerInput == "Finger Matched" :
-            status = createNewTemplate(f,uniqueId,selectedCompany,employeeId,deviceId,dbObject,database)
+            status = createNewTemplate(f,uniqueId,selectedCompany,deviceId,dbObject,database)
             print("Registration Status: {}".format(status))
             if status == "1":
                 sendPusherCommand(hardwareId,"REGISTED_SUCCESSFULLY",requestId)
@@ -614,6 +624,7 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag,\
                                      '0',\
                                      database)
+            print("No Card Record Found")
             turnLEDON('R') #RED
             turnOnBuzzer(0)
             t.sleep(.5)
@@ -627,6 +638,7 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag,\
                                      employeeDetails[1],\
                                      database)
+            print("Event Created Successfully")
             turnLEDON('G') #GREEN
             turnOnBuzzer(1)
             t.sleep(.5)
@@ -664,6 +676,7 @@ def accessGranted():
     
 def matchFingerPrint(f,dbObject,database):
     try:
+        print("Inside Function: {}".format("matchFingerPrint"))
         f.convertImage(0x01)
         result = f.searchTemplate()
         positionNumber = result[0]
@@ -713,20 +726,25 @@ def workWithFingerPrintSensor():
                     fileObject.updateCurrentTask('1')                  
                 elif currentTask == '2': # Check Command Script
                     deviceId = dbObject.getDeviceId()
-                    enrollNewEmployee(f,deviceId,dbObject,database)
+                    print("Inside Finger Enrollment Part")
+                    if deviceId != 0:
+                        enrollNewEmployee(f,deviceId,dbObject,database)
+                    ##########################################################################################
                     fileObject.updateCurrentTask('1')
                 elif syncStatus == '2':
-                    print("Sync Process")
+                    print("Inside Finger Sync Process")
                     syncUsersToSensor(f,dbObject,database)
                 lock.release()
                 t.sleep(1)
     #            print("A finger Is read")
         except Exception as e:
+            print("Exception From : {}\n Exception Message: {}".format("matchFingerPrint",str(e)))
             fileObject.updateExceptionMessage("sasMain{workWithFingerPrintSensor}: ",str(e))
             os.system('sudo pkill -f sasMain.py')
             lock.release()
             
 def readFromRFIDScanner():
+    print("Inside Function: {}".format("readFromRFIDScanner"))
     ser = serial.Serial("/dev/serial0")
     try:
         ser.baudrate = 9600
@@ -752,7 +770,7 @@ def workWithRFSensor():
                 print("Current workWithRFSensor Thread ID: {}".format(threading.current_thread()))
                 rfScannerValue = readFromRFIDScanner()
                 employeeCardNumber = int(rfScannerValue,16)
-                print(employeeCardNumber)
+                print("Read Card Number: {}".format(employeeCardNumber))
                 if len(rfScannerValue) < 10:
                     lock.acquire()
                     currentTask = fileObject.readCurrentTask()
@@ -760,7 +778,7 @@ def workWithRFSensor():
                         fileObject.updateCurrentTask('7')
                         currentTask = '7'
                     if currentTask == '7':
-        #                print('Card Number is: {}'.format(employeeCardNumber))
+                        print('Event for Card Number: {}'.format(employeeCardNumber))
                         createEventLogg(employeeCardNumber,'2',dbObject,database)
                         fileObject.updateCurrentTask('1')
                     lock.release()

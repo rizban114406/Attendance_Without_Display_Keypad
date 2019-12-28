@@ -64,7 +64,6 @@ def sendPusherCommand(hardwareId,command,requestId):
 while True:
     time.sleep(1)
     print("At The Start")
-    global output
     if (output != ""):
         localOutput = output  
         hardwareId = "asdasdas"
