@@ -63,11 +63,12 @@ def sendPusherCommand(hardwareId,command,requestId):
 
 while True:
     time.sleep(1)
-    print("At The Start")
+    print("Waiting For Message")
     if (output != ""):
         localOutput = output  
         hardwareId = "asdasdas"
         command = localOutput['command']
+        print("Received Message From Server: {}".format(localOutput))
         task = fileObject.readDesiredTask()
         requestId = fileObject.readRequestId()
         if (command == "ONLINE_FLAG" and \
@@ -123,8 +124,27 @@ while True:
                 status = apiObject.confirmSyncStatusReceived(hardwareId)
                 if (status == '1'):
                     fileObject.updateSyncConfStatus('1')
+            else:
+                sendPusherCommand(hardwareId,"DEVICE_IS_BUSY","0")
             if (localOutput == output):
-                output = ""     
+                output = ""
+        if (localOutput['hardwareId'] == hardwareId \
+            and localOutput['command'] == "UPDATE_DEVICE_INFO"):
+            from sasDatabase import sasDatabase
+            dbObject = sasDatabase()
+            database = dbObject.connectDataBase()
+            if (localOutput['requestFrom'] == '1' and \
+                dbObject.checkAddressUpdateRequired(1, database) == 0):
+                dbObject.resetUpdatedRequiredStatus(1)
+            else:
+                sendPusherCommand(hardwareId,"DEVICE_IS_BUSY","0")
+            if (localOutput['requestFrom'] == '2' and \
+                dbObject.checkAddressUpdateRequired(2, database) == 0):
+                dbObject.resetUpdatedRequiredStatus(2)
+            else:
+                sendPusherCommand(hardwareId,"DEVICE_IS_BUSY","0")
+            if (localOutput == output):
+                output = ""    
         
         
         

@@ -211,6 +211,7 @@ def checkForServerAddressInfo(requiredDetils):
     
 def generateDataToUpdateInfor(deviceInfo,urls):
     existingEthernetSettings = fileObject.readCurrentEthernetSettings().split('-')
+    gsmFlag = fileObject.readGSMStatus()
     wifiNetworks = dbObject.getWifiConfigs(database)
     wifisettings = []
     for wifi in wifiNetworks:
@@ -244,7 +245,7 @@ def generateDataToUpdateInfor(deviceInfo,urls):
 
 osVersion = fileObject.readCurrentVersion()
 if __name__ == '__main__':
-    if(apiObjectPrimary.checkServerStatus() == 1 or apiObjectSecondary.checkServerStatus()):
+    if(apiObjectPrimary.checkServerStatus() == 1 or apiObjectSecondary.checkServerStatus() == 1):
         hardwareId = getHardwareId()
         deviceInfoRowNum = dbObject.countDeviceInfoTable(database)   
         print("Device Row Count: {}".format(deviceInfoRowNum))
@@ -303,11 +304,11 @@ if __name__ == '__main__':
                             print("deviceInfoUpdateStatus: {}, ethernetSetings: {}, \
                                   wifiSettings: {}".format(deviceInfoUpdateStatus,\
                                   ethernetSetings,wifiSettings))
-                            if (deviceInfoUpdateStatus == 2 \ #or configInfoUpdateStatus == 2\
-                                or ethernetSetings == 2 or wifiSettings == 2):
+                            if (deviceInfoUpdateStatus == 2 \
+                                or ethernetSetings == 2 or wifiSettings == 2):#or configInfoUpdateStatus == 2\
                                 dbObject.resetServerUpdatedStatus(1)
-                            if (deviceInfoUpdateStatus != 0 \ #and configInfoUpdateStatus != 0\
-                                and ethernetSetings != 0 and wifiSettings != 0):
+                            if (deviceInfoUpdateStatus != 0 \
+                                and ethernetSetings != 0 and wifiSettings != 0):#and configInfoUpdateStatus != 0\
                                 dbObject.setUpdatedRequiredStatus(2)
                                 
                 elif (dbObject.checkServerUpdateStatus(1, database)):
@@ -330,5 +331,3 @@ if __name__ == '__main__':
                         dbObject.setServerUpdatedStatus(2)
                 else:
                     break
-    else:
-        break

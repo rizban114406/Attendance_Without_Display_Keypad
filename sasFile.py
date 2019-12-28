@@ -16,6 +16,22 @@ class sasFile:
         file = open('currentTask.txt', 'w+')
         file.write(command)
         file.close()
+    
+    def readGSMStatus(self):
+        try:
+            file = open('gsmStatus.txt','r')
+            gsmStatus = file.read(1)
+            file.close()
+        except Exception as e:
+            self.updateGSMStatus('0')
+            self.updateExceptionMessage("sasFile{readGSMStatus}",str(e))
+            gsmStatus = '0'
+        return gsmStatus
+
+    def updateGSMStatus(self,gsmStatus):
+        file = open('gsmStatus.txt', 'w+')
+        file.write(gsmStatus)
+        file.close()
         
     def readSyncStatus(self):
         try:
