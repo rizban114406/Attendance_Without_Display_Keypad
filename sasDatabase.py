@@ -366,7 +366,7 @@ class sasDatabase:
         
     def getAllConfigurationDetails(self,locationType,database):
         curs = database.cursor()
-        curs.execute ("SELECT baseUrl,subUrl, FROM configurationTable WHERE id = ?",(locationType,)) #1=primary, 2=seondary
+        curs.execute ("SELECT baseUrl,subUrl FROM configurationTable WHERE id = ?",(locationType,)) #1=primary, 2=seondary
         desiredDetails = curs.fetchone()
         print(desiredDetails)
         if (desiredDetails != None):
@@ -518,7 +518,7 @@ class sasDatabase:
         
     def countDeviceInfoTable(self,database): # Drop Employee Information Table
         curs = database.cursor()
-        curs.execute("Select cout(*) from deviceInfoTable")
+        curs.execute("Select count(*) from deviceInfoTable")
         rowNum = curs.fetchone()
         return int(rowNum[0])
 

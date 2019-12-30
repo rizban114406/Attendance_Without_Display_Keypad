@@ -39,7 +39,7 @@ class sasFile:
             state = file.read(1)
             file.close()
         except Exception as e:
-            self.updateSyncConfStatus('0')
+            self.updateSyncStatus('0')
             self.updateExceptionMessage("sasFile{readSyncConfStatus}: ",str(e))
             state = '0'
         return state
@@ -84,7 +84,7 @@ class sasFile:
         except Exception as e:
             self.updateRequestId("0")
             requestId = "0"
-            self.updateExceptionMessage("sasFile{readStartTime}: ",str(e))
+            self.updateExceptionMessage("sasFile{readRequestId}: ",str(e))
         return requestId
     
     def updateRequestId(self,requestId):

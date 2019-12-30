@@ -8,7 +8,7 @@ database = dbObject.connectDataBase()
 apiObjectPrimary = sasAllAPI(1)
 apiObjectSecondary = sasAllAPI(2)
 if __name__ == '__main__':
-    deviceId = dbObject.getDeviceId()
+    deviceId = dbObject.getDeviceId(database)
     if deviceId != 0:
         if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
            dbObject.checkAddressUpdateRequired(1, database) == 0):

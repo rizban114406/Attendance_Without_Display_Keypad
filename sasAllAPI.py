@@ -8,8 +8,8 @@ class sasAllAPI:
         dbObject = sasDatabase()
         database = dbObject.connectDataBase()
         desiredDetails = dbObject.getAllConfigurationDetails(locationType,database)
-        self.ipAddress = desiredDetails[1]
-        self.baseURL = desiredDetails[2]
+        self.ipAddress = desiredDetails[0]
+        self.baseURL = desiredDetails[1]
         self.mainURL = "http://" + self.ipAddress + self.baseURL
         dbObject.databaseClose(database)
 
@@ -137,13 +137,14 @@ class sasAllAPI:
     def createDevice(self,hardwareId,osVersion):
         try:
             mainURL = self.mainURL + "create_device"
+            print(mainURL)
             payload = {"hardwareid" : hardwareId, \
                        "osversion"  : osVersion }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 10)
             print("Data Received {}".format(r.content))
             output = json.loads(r.content)
-            if (output['status'] == "success" and output['code'] == "1"):
+            if (output['status'] == "success" and output['code'] == 1):
                 return output['data']
             else:
                 return '0'   
@@ -157,8 +158,8 @@ class sasAllAPI:
             payload = {"deviceid" : deviceId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
-            output = json.loads(r.content)
             print("Data Received {}".format(r.content))
+            output = json.loads(r.content)
             if (output['code'] == 1):
                 return 1
             elif (output['code'] == 0):
@@ -175,8 +176,8 @@ class sasAllAPI:
             payload = {"deviceid" : deviceId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
-            output = json.loads(r.content)
             print("Data Received {}".format(r.content))
+            output = json.loads(r.content)
             if (output['code'] == 1):
                 return 1
             else:
@@ -199,7 +200,7 @@ class sasAllAPI:
                 return '0'
         
         except Exception as e:
-            fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
+            fileObject.updateExceptionMessage("sasAllAPI{confirmSyncStatusReceived}: ",str(e))
             return "Server Error"
         
     def getAllConfigurationDetails(self, deviceId):
@@ -208,8 +209,8 @@ class sasAllAPI:
             payload = {"deviceid" : deviceId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
-            output = json.loads(r.content)
             print("Data Received {}".format(r.content))
+            output = json.loads(r.content)
             if (output['status'] == "success" and output['code'] == 1):
                 return output['data']
             elif output['code'] == 2:
@@ -217,7 +218,7 @@ class sasAllAPI:
             return '0'
         
         except Exception as e:
-            fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
+            fileObject.updateExceptionMessage("sasAllAPI{getAllConfigurationDetails}: ",str(e))
             return "Server Error"
         
     def updateDeviceInfoToServer(self,receivedData):

@@ -52,10 +52,10 @@ hardwareId = "asdasdas"
 currentTask = '1'
 syncStatus = '0'
 lock = threading.Lock()
-startTime = fileObject.readStartTime()
 
 from sasAllAPI import sasAllAPI
 apiObject = sasAllAPI(2)
+
 REQUESTTIMEOUT = 5
 ENROLLMENTTIMEOUT = 150
 def configureFingerPrint():
@@ -264,7 +264,7 @@ def syncronizationProcess():
                 from sasDatabase import sasDatabase
                 dbObject = sasDatabase()
                 database = dbObject.connectDataBase()
-                deviceId = dbObject.getDeviceId()
+                deviceId = dbObject.getDeviceId(database)
                 if deviceId != 0:
                     getRFCardInformation(deviceId,dbObject,database)
                     fingerSyncStatus = getFingerprintInformation(deviceId,dbObject,database)
@@ -282,7 +282,7 @@ def syncronizationProcess():
         except Exception as e:
             print("Exception From : {}\n Exception Message: {}".format("syncronizationProcess",str(e)))
             fileObject.updateExceptionMessage("sasMain{syncronizationProcess}: ",str(e))
-            dbObject.databaseClose()
+#            dbObject.databaseClose()
     
         
 def calculateTimeDifference(currentDateTime,timeLimit):
@@ -567,6 +567,7 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
         sendPusherCommand(hardwareId,"TIME_OUT",requestId)
 
 def turnLEDON(color):
+    print("Requested Color: {}".format(color))
     if color == 'R':
         GPIO.output(redLightPin, 1)
         GPIO.output(greenLightPin, 0)
@@ -725,7 +726,7 @@ def workWithFingerPrintSensor():
                     matchFingerPrint(f,dbObject,database)
                     fileObject.updateCurrentTask('1')                  
                 elif currentTask == '2': # Check Command Script
-                    deviceId = dbObject.getDeviceId()
+                    deviceId = dbObject.getDeviceId(database)
                     print("Inside Finger Enrollment Part")
                     if deviceId != 0:
                         enrollNewEmployee(f,deviceId,dbObject,database)

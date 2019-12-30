@@ -9,7 +9,7 @@ try:
     dbObject.createTableWifiSettings(database)
     dbObject.createTableDeviceInfoTable(database)
     dbObject.createTableConfigInfoTable(database)
-    dbObject.insertIntoConfigurationTable("sas.aqualinkbd.com","/sas-test/api/",database)
+    dbObject.insertIntoConfigurationTable("inventory.aqualinkbd.com","/api/",database)
     dbObject.databaseClose(database)
     print ("Device Initialized From Main")
 except Exception as e:
