@@ -228,7 +228,7 @@ class sasAllAPI:
             payload = {"data" : dataToSend}
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 200)
-            print("Data Received {}".format(r.content))
+#            print("Data Received {}".format(r.content))
             output = json.loads(r.content)
             if (output['status'] == 'success'):
                 return 1

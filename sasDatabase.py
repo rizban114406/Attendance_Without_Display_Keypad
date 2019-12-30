@@ -426,7 +426,7 @@ class sasDatabase:
         curs.execute ("UPDATE configurationTable SET baseUrl = ?, \
                                                      subUrl = ?, \
                                                      updateRequired = '1',\
-                                                     serverUpdated = '1',\
+                                                     serverUpdated = '1'\
                                                      WHERE id = 2",\
                                                     (baseURL,\
                                                      subURL,))
@@ -480,7 +480,7 @@ class sasDatabase:
                                                    address         TEXT,\
                                                    subAddress      TEXT,\
                                                    ipAddress       TEXT,\
-                                                   companyId       NVARCHAR(3))")
+                                                   companyId       INTEGER)")
         self.databaseCommit(database)
         
     def insertIntoDeviceInfoTable(self,hardwareId,\
@@ -497,7 +497,7 @@ class sasDatabase:
                                                       address,\
                                                       subAddress,\
                                                       ipAddress,\
-                                                      companyId) VALUES (?,?,?,'','','',?,'')",\
+                                                      companyId) VALUES (?,?,?,'','','',?,0)",\
                                                       (str(hardwareId),\
                                                        int(deviceId),\
                                                        float(osVersion),\
@@ -564,13 +564,13 @@ class sasDatabase:
                                                       subAddress = ?, \
                                                       ipAddress = ?, \
                                                       companyId = ?, \
-                                                      deviceOSVersion = ?,\
+                                                      deviceOSVersion = ?\
                                                       WHERE id = 1",\
                                                       (str(deviceName),\
                                                        str(address),\
                                                        str(subAddress),\
                                                        str(ipAddress),\
-                                                       str(companyId),\
+                                                       (companyId),\
                                                        float(deviceOSVersion),))
             self.databaseCommit(database)
             return 1

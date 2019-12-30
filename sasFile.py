@@ -151,7 +151,7 @@ class sasFile:
             ethernet = ethernet.replace('\n','')
             file.close()
         except Exception as e:
-            self.writeCurrentEthernetSettings("1-")
+            self.writeCurrentEthernetSettings("1-0-0-0")
             ethernet = "1-0-0-0"
             self.updateExceptionMessage("sasFile{readCurrentEthernetSettings}: ",str(e))
         return ethernet

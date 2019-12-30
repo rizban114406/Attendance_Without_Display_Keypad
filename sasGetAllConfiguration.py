@@ -160,6 +160,7 @@ def checkForFirmwareUpdate(runningOsVersion, deviceCodeUrl, deviceCodeName):
             
 def checkForChangeinDeviceInfo(requiredDetils,deviceInfo):
     try:
+        ipAddress = getIpAddress()
         print("Existing Device Info: {}".format(deviceInfo))
         print("Change In Device Info: {}".format(requiredDetils))
         isChangeRequired = 0
