@@ -228,7 +228,7 @@ class sasDatabase:
 
     def truncateEventListTable(self,database): # Delete From Employee Infromation Table After Deleting Employee
         curs = database.cursor()
-        curs.execute("truncate eventListTable")
+        curs.execute("DELETE FROM eventListTable")
         self.databaseCommit(database)
         
     def deleteFromEventListTable(self,eventDateTime,database):
@@ -412,6 +412,7 @@ class sasDatabase:
         curs = database.cursor()
         curs.execute ("SELECT * FROM configurationTable WHERE id = 2") #1=primary, 2=seondary
         desiredDetails = curs.fetchone()
+        print(desiredDetails)
         if (desiredDetails != None):
             return 1
         else:
@@ -621,6 +622,12 @@ class sasDatabase:
             return desiredDetails
         else:
             return '0'
+        
+    def countWifiConfigs(self,database):
+        curs = database.cursor()
+        curs.execute ("SELECT count(*) FROM wifiSettings")
+        rowNum = curs.fetchone()
+        return int(rowNum[0])
         
     def checkWifiConfigsChange(self, ssid, password, priority, database):
         curs = database.cursor()

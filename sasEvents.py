@@ -13,15 +13,15 @@ if __name__ == '__main__':
         if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
            dbObject.checkAddressUpdateRequired(1, database) == 0):
             print("Primary Check Update Request Server: 0, Check Update Required Local: 0")
-            dbObject.resetUpdatedRequiredStatus(1)
+            dbObject.resetUpdatedRequiredStatus(1,database)
             apiObjectPrimary.confirmUpdateRequest(deviceId)
             
-        if(dbObject.checkSecondaryAddressAvailable() == 1 and \
+        if(dbObject.checkSecondaryAddressAvailable(database) == 1 and \
            dbObject.checkAddressUpdateRequired(2, database) == 0):
             print("Secondary Address Available: 1, Check Update Required Local: 0")
             if (apiObjectSecondary.checkUpdateRequest(deviceId) == 0):
                 print("Secondary Check Update Required Server: 0")
-                dbObject.resetUpdatedRequiredStatus(2)
+                dbObject.resetUpdatedRequiredStatus(2,database)
                 apiObjectSecondary.confirmUpdateRequest(deviceId)
             
         while True:
@@ -37,15 +37,15 @@ if __name__ == '__main__':
                 if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
                    dbObject.checkAddressUpdateRequired(1, database) == 0):
                     print("Primary Check Update Request Server: 0, Check Update Required Local: 0")
-                    dbObject.resetUpdatedRequiredStatus(1)
+                    dbObject.resetUpdatedRequiredStatus(1, database)
                     apiObjectPrimary.confirmUpdateRequest(deviceId)
                     primary = '1'
                     fileObject.updateNetworkStatus(primary,secondary)
             
-            if (dbObject.checkSecondaryAddressAvailable() == 1):
+            if (dbObject.checkSecondaryAddressAvailable(database) == 1):
                 print("Secondary Address Available: 1")
                 secondaryStatus = apiObjectSecondary.checkServerStatus()
-                print("Secondary Network: {}".format(primaryStatus))
+                print("Secondary Network: {}".format(secondaryStatus))
                 if (secondaryStatus == 0 and secondary == '1'):
                     secondary = '0'
                     fileObject.updateNetworkStatus(primary,secondary)
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                     if(apiObjectSecondary.checkUpdateRequest(deviceId) == 0 and \
                        dbObject.checkAddressUpdateRequired(2, database) == 0):
                         print("Secondary Check Update Required Server: 1, Check Update Required Local: 0")
-                        dbObject.resetUpdatedRequiredStatus(2)
+                        dbObject.resetUpdatedRequiredStatus(2, database)
                         apiObjectSecondary.confirmUpdateRequest(deviceId)
                         secondary = '1'
                         fileObject.updateNetworkStatus(primary,secondary)
