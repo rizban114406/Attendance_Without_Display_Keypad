@@ -632,7 +632,7 @@ class sasDatabase:
                                                          float(priority),))
         desiredDetails = curs.fetchall()
         print(desiredDetails)
-        if (desiredDetails != None):
+        if (len(desiredDetails) > 0):
             return 1
         else:
             return 0

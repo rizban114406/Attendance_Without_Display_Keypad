@@ -67,11 +67,18 @@ def setWIFINetworkConfiguration(wifiSettings):
     try:
         isChangeRequired = 0
         print("New Wifi Settings: {}".format(wifiSettings))
+        index = 0
         for settings in wifiSettings:
+            print(settings)
+            print(dbObject.checkWifiConfigsChange(settings["ssid"],\
+                                               settings["password"],\
+                                               settings["priority"],\
+                                               database))
             if(dbObject.checkWifiConfigsChange(settings["ssid"],\
                                                settings["password"],\
                                                settings["priority"],\
                                                database)):
+                del wifiSettings[index]
                 continue
             else:
                 isChangeRequired = 1
@@ -87,7 +94,7 @@ def setWIFINetworkConfiguration(wifiSettings):
                 password = "psk="+ '"' + settings["password"] + '"' + "\n"
                 lines.insert(i+3, password)
                 lines.insert(i+4,"key_mgmt=WPA-PSK\n")
-                priority = "priority="+ '"' + settings["priority"] + '"' + "\n"
+                priority = "priority=" + str(settings["priority"]) + "\n"
                 lines.insert(i+5, priority)
                 lines.insert(i+6, "}\n")
                 i = i + 6
@@ -219,9 +226,9 @@ def generateDataToUpdateInfor(deviceInfo,urls):
     wifiNetworks = dbObject.getWifiConfigs(database)
     wifisettings = []
     for wifi in wifiNetworks:
-        wifisettings.append({"ssid" : wifi[0],\
-                             "password" : wifi[1],\
-                             "priority" : wifi[2]})
+        wifisettings.append({"ssid" : wifi[1],\
+                             "password" : wifi[2],\
+                             "priority" : wifi[3]})
     staticIpSettings = {"ip" : existingEthernetSettings[1],\
                         "mask" : existingEthernetSettings[2],\
                         "gateway" : existingEthernetSettings[3]}
