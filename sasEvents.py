@@ -49,9 +49,10 @@ if __name__ == '__main__':
                 if (secondaryStatus == 0 and secondary == '1'):
                     secondary = '0'
                     fileObject.updateNetworkStatus(primary,secondary)
-                    fileObject.updateSyncConfStatus('1')
                     
                 elif (secondaryStatus == 1 and secondary == '0'):
+                    if fileObject.readSyncStatus() == '0':
+                        fileObject.updateSyncStatus('1')
                     if(apiObjectSecondary.checkUpdateRequest(deviceId) == 0 and \
                        dbObject.checkAddressUpdateRequired(2, database) == 0):
                         print("Secondary Check Update Required Server: 1, Check Update Required Local: 0")

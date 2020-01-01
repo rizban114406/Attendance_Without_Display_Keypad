@@ -65,19 +65,19 @@ class sasAllAPI:
             fileObject.updateExceptionMessage("sasAllAPI{sendEventData}",str(e))
             return str(e)
         
-    def getTime(self):
-        try:
-            mainURL = self.mainURL + "get_time"
-            r = requests.post(mainURL,timeout = 4)
-            print("Data Received {}".format(r.content))
-            output = json.loads(r.content)
-            if (output['status'] == 'success'):
-                return output['data']
-            else:
-                return "Not Successfull"
-        except Exception as e:
-            fileObject.updateExceptionMessage("sasAllAPI{getTime}",str(e))
-            return "Not Successfull"
+#    def getTime(self):
+#        try:
+#            mainURL = self.mainURL + "get_time"
+#            r = requests.post(mainURL,timeout = 4)
+#            print("Data Received {}".format(r.content))
+#            output = json.loads(r.content)
+#            if (output['status'] == 'success'):
+#                return output['data']
+#            else:
+#                return "Not Successfull"
+#        except Exception as e:
+#            fileObject.updateExceptionMessage("sasAllAPI{getTime}",str(e))
+#            return "Not Successfull"
 
     def getDataToSync(self,receivedData,deviceId):
         try:
@@ -117,22 +117,22 @@ class sasAllAPI:
             fileObject.updateExceptionMessage("sasAllAPI{getCardDataToSync}",str(e))
             return "Server Error"
 
-    def getDeviceInfo(self,deviceId):
-        try:
-            mainURL = self.mainURL + "get_device"
-            payload = {"deviceid" : deviceId }
-            print("Data To Be Sent: {}".format(payload))
-            r = requests.post(mainURL, data = payload,timeout = 10)
-            output = json.loads(r.content)
-            print("Data Received {}".format(r.content))
-            if (output['status'] == "success" and output['code'] == "1"):
-                return output['data']
-            else:
-                return '0'
-        
-        except Exception as e:
-            fileObject.updateExceptionMessage("sasAllAPI{getDeviceInfo}",str(e))
-            return "Server Error"
+#    def getDeviceInfo(self,deviceId):
+#        try:
+#            mainURL = self.mainURL + "get_device"
+#            payload = {"deviceid" : deviceId }
+#            print("Data To Be Sent: {}".format(payload))
+#            r = requests.post(mainURL, data = payload,timeout = 10)
+#            output = json.loads(r.content)
+#            print("Data Received {}".format(r.content))
+#            if (output['status'] == "success" and output['code'] == "1"):
+#                return output['data']
+#            else:
+#                return '0'
+#        
+#        except Exception as e:
+#            fileObject.updateExceptionMessage("sasAllAPI{getDeviceInfo}",str(e))
+#            return "Server Error"
 
     def createDevice(self,hardwareId,osVersion):
         try:
@@ -237,5 +237,22 @@ class sasAllAPI:
         except Exception as e:
             fileObject.updateExceptionMessage("sasAllAPI{getDataToSync}",str(e))
             return 0
+        
+    def confirmDeviceStatus(self,hardwareId):
+        try:
+            mainURL = self.mainURL + "change_device_status"
+            payload = {"hardwareid" : hardwareId }
+            print("Data To Be Sent: {}".format(payload))
+            r = requests.post(mainURL, data = payload,timeout = 3)
+            output = json.loads(r.content)
+            print("Data Received {}".format(r.content))
+            if (output['status'] == "success"):
+                return '1'
+            else:
+                return '0'
+
+        except Exception as e:
+            fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
+            return "Server Error"
                 
 
