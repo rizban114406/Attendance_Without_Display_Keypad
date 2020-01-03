@@ -69,7 +69,8 @@ if __name__ == '__main__':
                             deviceInfoData = {"deviceid"   : deviceInfo[2],\
                                               "companyid"  : deviceInfo[8],\
                                               "address"    : deviceInfo[3],\
-                                              "subaddress" : deviceInfo[6]}
+                                              "subaddress" : deviceInfo[6],\
+                                              "devicename" : deviceInfo[4]}
                             eventInfoData =[]
                             date_count = []
                             for reading in allEventData:
@@ -77,8 +78,7 @@ if __name__ == '__main__':
                                 eventInfoData.append({"eventdatetime"       : str(reading[2]),\
                                                       "uniqueid"            : str(reading[0]), \
                                                       "fingerorcardnumber"  : str(reading[1]),\
-                                                      "eventtype"           : str(reading[3]) , \
-                                                      "companyid"           : str(reading[4])})
+                                                      "eventtype"           : str(reading[3])})
                             mainData = {"deviceinfo" : deviceInfoData, \
                                         "eventdata"  : eventInfoData}
                             print("Event Data: {}".format(mainData))

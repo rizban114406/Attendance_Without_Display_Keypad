@@ -72,32 +72,30 @@ while True:
     time.sleep(1)
     print("Waiting For Message")
     if (output != ""):
-        print("Hello")
-#        localOutput = output  
-#        hardwareId = "asdasdas"
-#        command = localOutput['command']
-#        print("Received Message From Server: {}".format(localOutput))
-#        task = fileObject.readCurrentTask()
-#        requestId = fileObject.readRequestId()
-#        if (command == "ONLINE_FLAG" and \
-#            hardwareId == hardwareId):
-#            if task == '1':
-#                apiObject.confirmDeviceStatus(hardwareId)
-##                print(localOutput)
-##                print(output)
-#                if (localOutput == output):
-#                    output = ""
-#            else:
-#                print("DEVICE IS BUSY")
-#        elif (task == "1" and localOutput['hardwareId'] == hardwareId \
-#                          and localOutput['command'] == "ENROLL_USER" \
-#                          and requestId == "0"):
-#            fileObject.updateRequestId(localOutput['requestId'])
-#            fileObject.updateEnrollingUserInfo(localOutput['uniqueId'],localOutput['selectedCompany'])
-#            fileObject.updateCurrentTask('2')
-#            print("Take Info of the Enrolling User")
-#            sendPusherCommand(hardwareId,"ENROLL_COMMAND_RECEIVED",localOutput['requestId'])          
-#            output = ""
+        print("Output Message From Pusher {}".format(output))
+        localOutput = output  
+        hardwareId = "asdasdas"
+        print("Received Message From Server localoutput: {}".format(localOutput))
+        hardwareIdRequested = localOutput['hardwareid']
+        commandRequested = localOutput['command']
+        task = fileObject.readCurrentTask()
+        requestId = fileObject.readRequestId()
+        if(hardwareId == hardwareIdRequested):
+            if (commandRequested == "ONLINE_FLAG"):
+                if task == '1':
+                    apiObject.confirmDeviceStatus(hardwareId,0)
+                else:
+                    apiObject.confirmDeviceStatus(hardwareId,1)
+                if (localOutput == output):
+                    output = ""
+        
+            elif (task == "1" and commandRequested == "ENROLL_USER"):
+#                fileObject.updateRequestId(localOutput['requestId'])
+                fileObject.updateEnrollingUserInfo(localOutput['user_id'])
+                fileObject.updateCurrentTask('2')
+                print("Take Info of the Enrolling User")
+                sendPusherCommand(hardwareId,"ENROLL_COMMAND_RECEIVED",localOutput['requestId'])          
+                output = ""
 #            
 #        elif (task == "2" and localOutput['hardwareId'] == hardwareId \
 #                          and localOutput['command'] == "TAKE_SECOND_FINGER"

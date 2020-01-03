@@ -29,8 +29,7 @@ class sasDatabase:
 #        t.sleep(0.5)
         curs.execute("CREATE TABLE employeeInfoTable(id           INTEGER PRIMARY KEY AUTOINCREMENT,\
                                                      uniqueId     INTEGER,\
-                                                     fingerId     INTEGER, \
-                                                     companyId    INTEGER)")
+                                                     fingerId     INTEGER)")
         self.databaseCommit(database)
 
     def deleteFromEmployeeInfoTable(self,uniqueId,fingerId,database): # Delete From Employee Infromation Table After Deleting Employee
@@ -95,17 +94,14 @@ class sasDatabase:
     def insertNewEmployee(self,\
                           uniqueId,\
                           fingerId,\
-                          companyId,\
                           database):
         
         curs = database.cursor()
         try:
             curs.execute("INSERT INTO employeeInfoTable(uniqueId,\
-                                                        fingerId,\
-                                                        companyId) VALUES (?,?,?)",\
+                                                        fingerId) VALUES (?,?)",\
                                                         (int(uniqueId),\
-                                                        int(fingerId),\
-                                                        int(companyId),))
+                                                        int(fingerId),))
             self.databaseCommit(database)
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{insertNewEmployee}: ",str(e))
@@ -126,7 +122,7 @@ class sasDatabase:
         
     def getEmployeeDetails(self,positionNumber,database):
         curs = database.cursor()
-        curs.execute ("SELECT uniqueId,companyId \
+        curs.execute ("SELECT uniqueId\
                        FROM employeeInfoTable \
                        WHERE fingerId = ?",(positionNumber,))
         desiredDetails = curs.fetchone()
@@ -149,8 +145,7 @@ class sasDatabase:
                                                    uniqueId       INTEGER,\
                                                    fingerId       INTEGER, \
                                                    fingerMatrix   TEXT, \
-                                                   desiredTask    NVARCHAR(2), \
-                                                   companyId      INTEGER)")
+                                                   desiredTask    NVARCHAR(2))")
         self.databaseCommit(database)
 
     def insertToTempTableToSync(self,\
@@ -158,20 +153,17 @@ class sasDatabase:
                                 fingerId,\
                                 fingerMatrix,\
                                 desiredTask,\
-                                companyId, \
                                 database): # Insert Into Temporary Table To Sync With The Server
         curs = database.cursor()
         try:
             curs.execute("INSERT INTO tempTableToSync(uniqueId,\
                                                       fingerId,\
                                                       fingerMatrix,\
-                                                      desiredTask,\
-                                                      companyId) VALUES (?,?,?,?,?)",\
+                                                      desiredTask) VALUES (?,?,?,?)",\
                                                       (int(uniqueId),\
                                                       int(fingerId),\
                                                       str(fingerMatrix),\
-                                                      str(desiredTask),\
-                                                      int(companyId),))
+                                                      str(desiredTask),))
             self.databaseCommit(database)
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{insertToTempTableToSync}: ",str(e))
@@ -222,8 +214,7 @@ class sasDatabase:
         curs.execute("CREATE TABLE eventListTable(uniqueId      INTEGER,\
                                                   fingerOrCard  INTEGER,\
                                                   eventDateTime DATETIME,\
-                                                  eventType     NVARCHAR(1),\
-                                                  companyId     INTEGER)")
+                                                  eventType     NVARCHAR(1))")
         self.databaseCommit(database)
 
     def truncateEventListTable(self,database): # Delete From Employee Infromation Table After Deleting Employee
@@ -253,19 +244,16 @@ class sasDatabase:
                         fingerOrCard,\
                         eventDateTime,\
                         eventType,\
-                        companyId,\
                         database):
         curs = database.cursor()
         curs.execute("INSERT INTO eventListTable(uniqueId,\
                                                  fingerOrCard,\
                                                  eventDateTime,\
-                                                 eventType,\
-                                                 companyID) VALUES (?,?,?,?,?)",\
+                                                 eventType) VALUES (?,?,?,?)",\
                                                 (int(uniqueId),\
                                                  int(fingerOrCard),\
                                                  eventDateTime,\
-                                                 eventType,\
-                                                 int(companyId),))
+                                                 eventType,))
         self.databaseCommit(database)
 #    ######################### All Functions Regarding Event Information Table ####################
 
@@ -280,8 +268,7 @@ class sasDatabase:
             print("Does not Exists")
         curs.execute("CREATE TABLE employeeCardInfo(id        INTEGER PRIMARY KEY AUTOINCREMENT,\
                                                    uniqueId   INTEGER,\
-                                                   cardNumber INTEGER, \
-                                                   companyId  INTEGER)")
+                                                   cardNumber INTEGER)")
         self.databaseCommit(database)
 
     def deleteFromEmployeeCardInfoTable(self,uniqueId,cardNumber,database): # Delete From Employee Card Info Table After Deleting Employee
@@ -321,23 +308,20 @@ class sasDatabase:
 
     def insertIntoEmployeeCardInfoTable(self,uniqueId,\
                                         cardNumber,\
-                                        companyId,\
                                         database):
         curs = database.cursor()
         try:
             curs.execute("INSERT INTO employeeCardInfo(uniqueId,\
-                                                       cardNumber,\
-                                                       companyId) VALUES (?,?,?)",\
+                                                       cardNumber) VALUES (?,?)",\
                                                        (int(uniqueId),\
-                                                       int(cardNumber),\
-                                                       int(companyId),))
+                                                       int(cardNumber)))
             self.databaseCommit(database)
         except Exception as e:
             fileObject.updateExceptionMessage("sasDatabase{insertIntoEmployeeCardInfoTable}",str(e))
 
     def getEmployeeDetailsFromCard(self,cardNumber,database):
         curs = database.cursor()
-        curs.execute ("SELECT uniqueId,companyId \
+        curs.execute ("SELECT uniqueId\
                        FROM employeeCardInfo \
                        WHERE cardNumber = ?",(int(cardNumber),))
         desiredDetails = curs.fetchone()

@@ -189,7 +189,6 @@ def getRFCardInformation(deviceId,dbObject,database):
                     # print (data['uniqueid']," ",data['companyid'])
                     dbObject.insertIntoEmployeeCardInfoTable(data['uniqueid'],\
                                                              data['cardnumber'],\
-                                                             data['companyid'],\
                                                              database)
                     print("New Card Request Entered: {}".format(data))
                 for data in receivedDataSync['delete_request_enrollment']:
@@ -231,7 +230,6 @@ def getFingerprintInformation(deviceId,dbObject,database):
                                                      data['fingernumber'],\
                                                      data['matrix'],\
                                                      '1',\
-                                                     data['companyid'],\
                                                      database)
                     print("Finger Request: {}".format(data))
                     t.sleep(0.1)
@@ -240,7 +238,6 @@ def getFingerprintInformation(deviceId,dbObject,database):
                                                      data['fingernumber'],\
                                                      "N",\
                                                      '3',\
-                                                     '0',\
                                                      database)
                     print("Finger Delete Request: {}".format(data))
                     t.sleep(0.1)
@@ -510,19 +507,18 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
         sendPusherCommand(hardwareId,"TIME_OUT",requestId)
         return "Time Out"
 
-def createNewTemplate(f,uniqueId,selectedCompany,deviceId,dbObject,database):
+def createNewTemplate(f,uniqueId,deviceId,dbObject,database):
     print("Inside Function: {}".format("createNewTemplate"))
     characterMatrix = f.downloadCharacteristics()
     matrix = ""
     for i in characterMatrix:
         matrix = matrix+ str(i)+ "-"
-    receivedData = apiObject.getFingerId(uniqueId,matrix,selectedCompany,deviceId)
+    receivedData = apiObject.getFingerId(uniqueId,matrix,deviceId)
     print("Received Data {}: ".format(receivedData))
     if receivedData[0] == "Success":
         f.storeTemplate(int(receivedData[1][0]),0x01)
         dbObject.insertNewEmployee(uniqueId, \
                                    receivedData[1][0], \
-                                   selectedCompany, \
                                    database)
         print("Employee Added Successfully")
         return "1"
@@ -534,16 +530,16 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
     currentDateTime,currentTime = checkCurrentDateTime()
     print("Current Datetime: {}".format(currentDateTime))
     print("Current time: {}".format(currentTime))
-    uniqueId,selectedCompany= fileObject.readEnrollingUserInfo()
+    uniqueId = fileObject.readEnrollingUserInfo()
     requestId = fileObject.readRequestId()
     print("UniqueId Received: {}".format(uniqueId))
-    print("Selected Company: {}".format(selectedCompany))
+#    print("Selected Company: {}".format(selectedCompany))
     print("Request ID: {}".format(requestId))
  
     try:
         fingerInput = takeFingerprintToEnroll(f,currentDateTime,requestId)
         if fingerInput == "Finger Matched" :
-            status = createNewTemplate(f,uniqueId,selectedCompany,deviceId,dbObject,database)
+            status = createNewTemplate(f,uniqueId,deviceId,dbObject,database)
             print("Registration Status: {}".format(status))
             if status == "1":
                 sendPusherCommand(hardwareId,"REGISTED_SUCCESSFULLY",requestId)
@@ -623,7 +619,6 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
                                      attendanceFlag,\
-                                     '0',\
                                      database)
             print("No Card Record Found")
             turnLEDON('R') #RED
@@ -637,7 +632,6 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
                                      attendanceFlag,\
-                                     employeeDetails[1],\
                                      database)
             print("Event Created Successfully")
             turnLEDON('G') #GREEN
@@ -653,7 +647,6 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      employeeCardorFingerNumber, \
                                      currentDateTime, \
                                      attendanceFlag, \
-                                     employeeDetails[1], \
                                      database)
             print("Event Created Successfully")
             accessGranted()
