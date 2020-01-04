@@ -56,6 +56,7 @@ def generateDataToUpdateInfor():
     print("Device Updated Info: {}".format(dataToSend))
     return dataToSend
 #dbObject.createTableWifiSettings(database)
+dbObject.setUpdatedRequiredStatus(2, database)
 dataToSend2 = generateDataToUpdateInfor()
 dataToSend = json.dumps(dataToSend2)
 payload = {"data" : dataToSend}

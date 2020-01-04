@@ -29,6 +29,7 @@ if __name__ == '__main__':
             print("Primary Network: {}, Secondary Network: {}".format(primary,secondary))
             primaryStatus = apiObjectPrimary.checkServerStatus()
             print("Primary Network: {}".format(primaryStatus))
+            database = dbObject.connectDataBase()
             if (primaryStatus == 0 and primary == '1'):
                 primary = '0'
                 fileObject.updateNetworkStatus(primary,secondary)
@@ -100,7 +101,7 @@ if __name__ == '__main__':
                         continue
                     except Exception as e:
                         #print str(e)
-                        dbObject.databaseClose(database)
+#                        dbObject.databaseClose(database)
                         fileObject.updateExceptionMessage("sasEvents{__main__}",str(e)) 
             else:
                 print("Secondary Address Available: 0")

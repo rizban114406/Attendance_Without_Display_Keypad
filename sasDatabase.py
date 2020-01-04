@@ -179,7 +179,7 @@ class sasDatabase:
         try:     
             curs.execute("SELECT uniqueId,fingerId From tempTableToSync Where desiredTask = '3'")
             desiredDetails = curs.fetchall()
-#            print(desiredDetails)
+            print("Data To Delete: {}".format(desiredDetails))
             if (desiredDetails != None):
                 return desiredDetails
             else:
@@ -191,9 +191,9 @@ class sasDatabase:
     def getInfoFromTempTableToEnrollOrUpdate(self,database): # Get Data From Temporary Table To Sync With The Server
         curs = database.cursor()
         try:        
-            curs.execute("SELECT uniqueId,fingerId,fingerMatrix,companyId From tempTableToSync Where desiredTask = '1' Limit 500")
+            curs.execute("SELECT uniqueId,fingerId,fingerMatrix From tempTableToSync Where desiredTask = '1' Limit 500")
             desiredDetails = curs.fetchall()
-#            print(desiredDetails)
+            print("Data To Enroll: {}".format(desiredDetails))
             if (desiredDetails != None):
                 return desiredDetails
             else:
@@ -521,8 +521,8 @@ class sasDatabase:
         curs = database.cursor()
         curs.execute ("SELECT * FROM deviceInfoTable WHERE id = 1")
         desiredDetails = curs.fetchone()
-        print(desiredDetails)
-        if (desiredDetails != None):
+        print("Event Data To Be Sent: {}".format(desiredDetails))
+        if (len(desiredDetails) > 0):
             return desiredDetails
         else:
             return '0'

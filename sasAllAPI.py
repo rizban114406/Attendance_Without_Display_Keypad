@@ -28,7 +28,7 @@ class sasAllAPI:
             print("Exception Message: {}".format(str(e)))
             return 0
 
-    def getFingerId(self,uniqueId,matrix,selectedCompany,deviceId):
+    def getFingerId(self,uniqueId,matrix,deviceId):
         try:
             receivedData = []
 #            mainURL = self.mainURL + "fingerprint_enrollment"
@@ -214,6 +214,7 @@ class sasAllAPI:
     def getAllConfigurationDetails(self, deviceId):
         try:
             mainURL = self.mainURL + "get_device_info"
+            print(mainURL)
             payload = {"deviceid" : deviceId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
@@ -236,7 +237,7 @@ class sasAllAPI:
             payload = {"data" : dataToSend}
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 200)
-#            print("Data Received {}".format(r.content))
+            print("Data Received {}".format(r.content))
             output = json.loads(r.content)
             if (output['status'] == 'success'):
                 return 1
@@ -264,13 +265,16 @@ class sasAllAPI:
             fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
             return "Server Error"
     
-    def replyPusherMessage(self,userId, hardwareId, command):
+    def replyPusherMessage(self, deviceId, hardwareId, userId, command):
         try:
             mainURL = self.mainURL + "enroll_finger"
-            mainData = {"user_id"    : userId,\
-                       "hardwareid" : hardwareId,\
-                       "command"    : command}
-            dataToSend = json.dump(mainData)
+            mainData = {"deviceid"   : deviceId,\
+                        "user_id"    : int(userId),\
+                        "hardwareid" : hardwareId,\
+                        "command"    : command}
+            print(mainURL)
+            print(mainData)
+            dataToSend = json.dumps(mainData)
             payload = {"data" : dataToSend}
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)

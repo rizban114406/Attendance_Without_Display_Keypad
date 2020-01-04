@@ -236,11 +236,11 @@ def generateDataToUpdateInfor(deviceInfo,urls):
                        "gsm" : gsmFlag}
     
     deviceInfoToSend = {"id" : deviceInfo[2],\
-                  "uniqueid" : deviceInfo[1],\
+                  "hardwareid" : deviceInfo[1],\
                   "osversion" : osVersion,\
                   "devicename" : deviceInfo[4],\
-                  "company" : deviceInfo[8],\
-                  "address" : deviceInfo[6],\
+                  "companyid" : deviceInfo[8],\
+                  "address" : deviceInfo[5],\
                   "subaddress" : deviceInfo[6],\
                   "baseurl" : urls[0],\
                   "suburl" : urls[1],\
