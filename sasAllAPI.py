@@ -264,11 +264,10 @@ class sasAllAPI:
             fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}: ",str(e))
             return "Server Error"
     
-    def replyPusherMessage(self,deviceId, userId, hardwareId, command):
+    def replyPusherMessage(self,userId, hardwareId, command):
         try:
             mainURL = self.mainURL + "enroll_finger"
-            mainData = {"deviceid"   : hardwareId,\
-                       "user_id"    : userId,\
+            mainData = {"user_id"    : userId,\
                        "hardwareid" : hardwareId,\
                        "command"    : command}
             dataToSend = json.dump(mainData)

@@ -386,7 +386,7 @@ def enrollmentLEDIndicator(color):
         turnLEDON('OFF')
         
     
-def takeFingerprintToEnroll(f,currentDateTime,requestId):
+def takeFingerprintToEnroll(f,currentDateTime,uniqueId,requestId):
     print("Inside Function: {}".format("takeFingerprintToEnroll"))
     x = False # Flag to check Enrollment Timeout
     y = False # Flag to Check Response Timeout
@@ -407,10 +407,12 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
             
             if ( positionNumber >= 0 ): # If Template Exists positonNumber will be > 0
                 print("No Match Found")
-                sendPusherCommand(hardwareId,"FINGER_ALREADY_EXISTS",requestId) # Send Already Exists Command to the Server
+#                sendPusherCommand(hardwareId,"FINGER_ALREADY_EXISTS",requestId) # Send Already Exists Command to the Server
+                apiObject.replyPusherMessage(hardwareId, uniqueId,"FINGER_ALREADY_EXISTS")
                 return "Enrollment Cancelled"
             else:
-                sendPusherCommand(hardwareId,"FIRST_FINGER_TAKEN",requestId) # Send First Finger Taken Confirmation to the Server
+#                sendPusherCommand(hardwareId,"FIRST_FINGER_TAKEN",requestId) # Send First Finger Taken Confirmation to the Server
+                apiObject.replyPusherMessage(hardwareId, uniqueId,"FIRST_FINGER_TAKEN")
                 enrollmentLEDIndicator('G')
                 print("First Finger Taken")
                 
@@ -418,7 +420,8 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                 print("Flag For Device Response x: {}".format(x))
                 print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))    
                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
-                    sendPusherCommand(hardwareId,"REMOVED1",requestId) # Send Removed Command To the Server First Time
+#                    sendPusherCommand(hardwareId,"REMOVED1",requestId) # Send Removed Command To the Server First Time
+                    apiObject.replyPusherMessage(hardwareId, uniqueId,"REMOVED1")
                     t.sleep(1)
                     print("Removed Sent")
                     
@@ -429,6 +432,7 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                     
                     elif y == True: # Response Timeout Check
                         sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout Response to the Server
+                        apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                         print("Enrollment Timeout")
                         return "Request Time Out"
                     
@@ -440,20 +444,23 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                         if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
                             f.convertImage(0x02)
                             if ( f.compareCharacteristics() == 0): # If First and Second Do Not Matche
-                                sendPusherCommand(hardwareId,"FINGERS_DO_NOT_MATCH",requestId) # Send Finger Not Matched to the Server
+#                                sendPusherCommand(hardwareId,"FINGERS_DO_NOT_MATCH",requestId) # Send Finger Not Matched to the Server
+                                apiObject.replyPusherMessage(hardwareId, uniqueId,"FINGERS_DO_NOT_MATCH")
                                 print("Finger Do not match Second Time")
                                 return "Finger Did Not Match Second Time"
                             
                             else:
                                 print("Second Finger Taken")
-                                sendPusherCommand(hardwareId,"SECOND_FINGER_TAKEN",requestId) # Send Second Time Finger Taken To the Server
+#                                sendPusherCommand(hardwareId,"SECOND_FINGER_TAKEN",requestId) # Send Second Time Finger Taken To the Server
+                                apiObject.replyPusherMessage(hardwareId, uniqueId,"SECOND_FINGER_TAKEN")
                                 enrollmentLEDIndicator('G')
                                 
                                 x,continueEnrollment = waitToRemoveFinger(f,currentDateTime)
                                 print("Flag For Device Response x: {}".format(x))
                                 print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
                                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
-                                    sendPusherCommand(hardwareId,"REMOVED2",requestId)
+#                                    sendPusherCommand(hardwareId,"REMOVED2",requestId)
+                                    apiObject.replyPusherMessage(hardwareId, uniqueId,"REMOVED2")
                                     t.sleep(1)
                                     
                                     currentTask, x, y = waitForServerInstructionToCome('4', currentDateTime)
@@ -461,7 +468,8 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                                     if (currentTask == "5"): # Enrollment Cancelled Check
                                         return "Enrollment Cancelled"
                                     elif y == True: # Response Timeout
-                                        sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout to the Server
+#                                        sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout to the Server
+                                        apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                                         print("Enrollment Timeout")
                                         return "Request Time Out"
                                     elif x == False:
@@ -472,39 +480,49 @@ def takeFingerprintToEnroll(f,currentDateTime,requestId):
                                         if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
                                             f.convertImage(0x01)
                                             if ( f.compareCharacteristics() == 0): # Check Finger Matched 
-                                                sendPusherCommand(hardwareId,"FINGERS_DO_NOT_MATCH",requestId) # Send Not Matched to the Server
+#                                                sendPusherCommand(hardwareId,"FINGERS_DO_NOT_MATCH",requestId) # Send Not Matched to the Server
+                                                apiObject.replyPusherMessage(hardwareId, uniqueId,"FINGERS_DO_NOT_MATCH")
                                                 print("Finger Do not match Third Time")
                                                 return "Finger Did Not Match Third Time"
                                             else:
                                                 print("Finger Matched")
-                                                sendPusherCommand(hardwareId,"THIRD_FINGER_TAKEN",requestId) # Send Third Finger Taken to THe Server
+#                                                sendPusherCommand(hardwareId,"THIRD_FINGER_TAKEN",requestId) # Send Third Finger Taken to THe Server
+                                                apiObject.replyPusherMessage(hardwareId, uniqueId,"THIRD_FINGER_TAKEN")
                                                 enrollmentLEDIndicator('G')
                                                 return "Finger Matched"
                                         else:
-                                            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#                                            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+                                            apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                                             return "Time Out"
                                     else:
-                                        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#                                        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+                                        apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                                         return "Time Out"
                                 else:
-                                    sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#                                    sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+                                    apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                                     return "Time Out"   
                         else:
-                            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#                            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+                            apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                             return "Time Out"
                     else:
-                        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#                        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+                        apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                         return "Time Out"
                 else:
-                    sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#                    sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+                    apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
                     return "Time Out"
         else:
-            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+            apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
             return "Time Out"
     except Exception as e:
         print("Exception From : {}\n Exception Message: {}".format("takeFingerprintToEnroll",str(e)))
         fileObject.updateExceptionMessage("sasMain{takeFingerprintToEnroll}: ",str(e))
-        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+        apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
         return "Time Out"
 
 def createNewTemplate(f,uniqueId,deviceId,dbObject,database):
@@ -537,18 +555,20 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
     print("Request ID: {}".format(requestId))
  
     try:
-        fingerInput = takeFingerprintToEnroll(f,currentDateTime,requestId)
+        fingerInput = takeFingerprintToEnroll(f,currentDateTime,uniqueId,requestId)
         if fingerInput == "Finger Matched" :
             status = createNewTemplate(f,uniqueId,deviceId,dbObject,database)
             print("Registration Status: {}".format(status))
             if status == "1":
-                sendPusherCommand(hardwareId,"REGISTED_SUCCESSFULLY",requestId)
+#                sendPusherCommand(hardwareId,"REGISTED_SUCCESSFULLY",requestId)
+                apiObject.replyPusherMessage(hardwareId, uniqueId,"REGISTED_SUCCESSFULLY")
                 enrollmentLEDIndicator('G')
                 fileObject.updateRequestId("0")
                 print("Registered Successfuly")
                 #GPIO INDICATOR
             else:
-                sendPusherCommand(hardwareId,"NOT_REGISTED_SUCCESSFULLY",requestId)
+#                sendPusherCommand(hardwareId,"NOT_REGISTED_SUCCESSFULLY",requestId)
+                apiObject.replyPusherMessage(hardwareId, uniqueId,"NOT_REGISTED_SUCCESSFULLY")
                 enrollmentLEDIndicator('R')
                 fileObject.updateRequestId("0")
                 print("Registered Unsuccessfuly")
@@ -559,8 +579,9 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
         print("Exception From : {}\n Exception Message: {}".format("enrollNewEmployee",str(e)))
         fileObject.updateExceptionMessage("sasMain{enrollNewEmployee}: ",str(e))
         enrollmentLEDIndicator('R')
-        fileObject.updateRequestId("0")
-        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+#        fileObject.updateRequestId("0")
+#        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
+        apiObject.replyPusherMessage(hardwareId, uniqueId,"TIME_OUT")
 
 def turnLEDON(color):
     print("Requested Color: {}".format(color))

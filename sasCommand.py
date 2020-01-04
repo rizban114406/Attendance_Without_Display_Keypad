@@ -27,7 +27,7 @@ fileObject.updateRequestId("0")
 fileObject.updateCurrentTask("1")
 
 from sasAllAPI import sasAllAPI
-apiObject = sasAllAPI(2)
+apiObjectSecondary = sasAllAPI(2)
 apiObjectPrimary = sasAllAPI(1)
 
 output = ""
@@ -81,11 +81,18 @@ while True:
         task = fileObject.readCurrentTask()
         requestId = fileObject.readRequestId()
         if(hardwareId == hardwareIdRequested):
+            
             if (commandRequested == "ONLINE_FLAG"):
                 if task == '1':
-                    apiObject.confirmDeviceStatus(hardwareId,0)
+                    if (localOutput['inventory'] == 0):
+                        apiObjectSecondary.confirmDeviceStatus(hardwareId,0)
+                    elif (localOutput['inventory'] == 1):
+                        apiObjectPrimary.confirmDeviceStatus(hardwareId,0)
                 else:
-                    apiObject.confirmDeviceStatus(hardwareId,1)
+                    if (localOutput['inventory'] == 0):
+                        apiObjectSecondary.confirmDeviceStatus(hardwareId,1)
+                    elif (localOutput['inventory'] == 1):
+                        apiObjectPrimary.confirmDeviceStatus(hardwareId,1)
                 if (localOutput == output):
                     output = ""
         
@@ -94,65 +101,49 @@ while True:
                 fileObject.updateEnrollingUserInfo(localOutput['user_id'])
                 fileObject.updateCurrentTask('2')
                 print("Take Info of the Enrolling User")
-                sendPusherCommand(hardwareId,"ENROLL_COMMAND_RECEIVED",localOutput['requestId'])          
-                output = ""
+                apiObjectSecondary.replyPusherMessage(hardwareId, localOutput['user_id'],"ENROLL_COMMAND_RECEIVED")
+                if (localOutput == output):
+                    output = ""
 #            
-#        elif (task == "2" and localOutput['hardwareId'] == hardwareId \
-#                          and localOutput['command'] == "TAKE_SECOND_FINGER"
-#                          and localOutput['requestId'] == requestId):
-#            fileObject.updateCurrentTask('3')
-#            if (localOutput == output):
-#                output = ""
+            elif (task == "2" and commandRequested == "TAKE_SECOND_FINGER"):
+                fileObject.updateCurrentTask('3')
+                if (localOutput == output):
+                    output = ""
 #                
-#        elif (task != "1" and localOutput['hardwareId'] == hardwareId \
-#                          and localOutput['command'] == "TAKE_THIRD_FINGER"
-#                          and localOutput['requestId'] == requestId):
-#            fileObject.updateCurrentTask('4')
-#            if (localOutput == output):
-#                output = ""
+            elif (task == "3" and commandRequested == "TAKE_THIRD_FINGER"):
+                fileObject.updateCurrentTask('4')
+                if (localOutput == output):
+                    output = ""
 #                
-#        elif (task == "3" and localOutput['hardwareId'] == hardwareId \
-#                          and localOutput['command'] == "CANCEL_ENROLLMENT"
-#                          and localOutput['requestId'] == requestId):
-#            fileObject.updateCurrentTask('5')
-#            sendPusherCommand(hardwareId,"ENROLLMENT_CANCELLED",localOutput['requestId'])
-#            if (localOutput == output):
-#                output = ""        
-#        elif (task == "3" and localOutput['hardwareId'] == hardwareId \
-#                          and localOutput['command'] == "TIME_OUT"
-#                          and localOutput['requestId'] == requestId):
-#            fileObject.updateCurrentTask('5')
-#            if (localOutput == output):
-#                output = ""     
-#        if (localOutput['hardwareId'] == hardwareId \
-#            and localOutput['command'] == "SYNC_DEVICE"):
-#            if (fileObject.readSyncConfStatus() == '0'):
-#                status = apiObject.confirmSyncStatusReceived(hardwareId)
-#                if (status == '1'):
-#                    fileObject.updateSyncConfStatus('1')
-#            else:
-#                sendPusherCommand(hardwareId,"DEVICE_IS_BUSY","0")
-#            if (localOutput == output):
-#                output = ""
-#        if (localOutput['hardwareId'] == hardwareId \
-#            and localOutput['command'] == "UPDATE_DEVICE_INFO"):
-#            from sasDatabase import sasDatabase
-#            dbObject = sasDatabase()
-#            database = dbObject.connectDataBase()
-#            if (localOutput['requestFrom'] == '1' and \
-#                dbObject.checkAddressUpdateRequired(1, database) == 0):
-#                dbObject.resetUpdatedRequiredStatus(1, database)
-#                deviceId = dbObject.getDeviceId(database)
-#                apiObjectPrimary.confirmUpdateRequest(deviceId)
-#            else:
-#                sendPusherCommand(hardwareId,"DEVICE_IS_BUSY","0")
-#            if (localOutput['requestFrom'] == '2' and \
-#                dbObject.checkAddressUpdateRequired(2, database) == 0):
-#                dbObject.resetUpdatedRequiredStatus(2, database)
-#            else:
-#                sendPusherCommand(hardwareId,"DEVICE_IS_BUSY","0")
-#            if (localOutput == output):
-#                output = ""    
+            elif ((task == "2" or task == "3" or task == "4")\
+                  and (commandRequested == "CANCEL_ENROLLMENT")):
+                fileObject.updateCurrentTask('5')
+                uniqueId = fileObject.readEnrollingUserInfo()
+                apiObjectSecondary.replyPusherMessage(hardwareId, uniqueId,"ENROLLMENT_CANCELLED")
+                if (localOutput == output):
+                    output = ""   
+                    
+            if (commandRequested == "SYNC_DEVICE"):
+                if (fileObject.readSyncStatus() == '0'):
+                    fileObject.updateSyncStatus('1')
+                if (localOutput == output):
+                    output = ""
+                    
+            if (commandRequested == "UPDATE_DEVICE_INFO"):
+                from sasDatabase import sasDatabase
+                dbObject = sasDatabase()
+                database = dbObject.connectDataBase()
+                if (localOutput['inventory'] == 1 and \
+                    dbObject.checkAddressUpdateRequired(1, database) == 0):
+                    dbObject.resetUpdatedRequiredStatus(1, database)
+                    deviceId = dbObject.getDeviceId(database)
+                    apiObjectPrimary.confirmUpdateRequest(deviceId)
+                    
+                elif (localOutput['inventory'] == 0 and \
+                    dbObject.checkAddressUpdateRequired(2, database) == 0):
+                    dbObject.resetUpdatedRequiredStatus(2, database)
+                if (localOutput == output):
+                    output = ""    
         
         
         
