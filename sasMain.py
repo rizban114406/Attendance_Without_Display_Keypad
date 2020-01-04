@@ -376,15 +376,16 @@ def waitForServerInstructionToCome(desiredCommand, currentDateTime):
         return (currentTask, x, y)
     
 def enrollmentLEDIndicator(color):
+    turnLEDON('OFF')
     if color == 'R':
         turnLEDON('R')
         turnOnBuzzer(0)
-        turnLEDON('OFF')
+#        turnLEDON('OFF')
     elif color == 'G':
         turnLEDON('G')
         turnOnBuzzer(1)
         t.sleep(1) # Wait for the User to Remove the Finger
-        turnLEDON('OFF')
+#        turnLEDON('OFF')
         
     
 def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
@@ -423,6 +424,8 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
 #                    sendPusherCommand(hardwareId,"REMOVED1",requestId) # Send Removed Command To the Server First Time
                     apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REMOVED1")
+                    turnLEDON('OFF')
+                    turnLEDON('G+B')
                     t.sleep(1)
                     print("Removed Sent")
                     
@@ -462,6 +465,8 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
                                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
 #                                    sendPusherCommand(hardwareId,"REMOVED2",requestId)
                                     apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REMOVED2")
+                                    turnLEDON('OFF')
+                                    turnLEDON('G+B')
                                     t.sleep(1)
                                     
                                     currentTask, x, y = waitForServerInstructionToCome('4', currentDateTime)
@@ -558,6 +563,7 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
     try:
         fingerInput = takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId)
         if fingerInput == "Finger Matched" :
+            turnLEDON('G+B')
             status = createNewTemplate(f,uniqueId,deviceId,dbObject,database)
             print("Registration Status: {}".format(status))
             if status == "1":
@@ -566,6 +572,7 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REGISTED_SUCCESSFULLY")
                 enrollmentLEDIndicator('G')
                 fileObject.updateRequestId("0")
+                turnLEDON('OFF')
                 print("Registered Successfuly")
                 #GPIO INDICATOR
             else:
@@ -573,9 +580,11 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"NOT_REGISTED_SUCCESSFULLY")
                 enrollmentLEDIndicator('R')
                 fileObject.updateRequestId("0")
+                turnLEDON('OFF')
                 print("Registered Unsuccessfuly")
         else:
             enrollmentLEDIndicator('R')
+            turnLEDON('OFF')
             fileObject.updateRequestId("0")
     except Exception as e:
         print("Exception From : {}\n Exception Message: {}".format("enrollNewEmployee",str(e)))
@@ -625,7 +634,11 @@ def turnOnBuzzer(access):
     if access == 1:
         t.sleep(.5)
     else:
-        t.sleep(1)
+        t.sleep(.1)
+        GPIO.output(buzzerPin, 0)
+        t.sleep(.1)
+        GPIO.output(buzzerPin, 1)
+        t.sleep(.1)
     GPIO.output(buzzerPin, 0)
     
 def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):

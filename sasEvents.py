@@ -2,6 +2,50 @@ import time
 from sasDatabase import sasDatabase
 from sasAllAPI import sasAllAPI
 from sasFile import sasFile
+import RPi.GPIO as GPIO
+
+redLightPin = 21
+greenLightPin = 20
+blueLightPin = 13
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(redLightPin, GPIO.OUT)
+GPIO.setup(greenLightPin, GPIO.OUT)
+GPIO.setup(blueLightPin, GPIO.OUT)
+def turnLEDON(color):
+    print("Requested Color: {}".format(color))
+    if color == 'R':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 0)
+    elif color == 'G':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 0)
+    elif color == 'B':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'W':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'R+G':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 0)
+    elif color == 'G+B':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 1)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'R+B':
+        GPIO.output(redLightPin, 1)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 1)
+    elif color == 'OFF':
+        GPIO.output(redLightPin, 0)
+        GPIO.output(greenLightPin, 0)
+        GPIO.output(blueLightPin, 0)
+        
 fileObject = sasFile()
 dbObject = sasDatabase()
 database = dbObject.connectDataBase()
@@ -30,6 +74,14 @@ if __name__ == '__main__':
             primaryStatus = apiObjectPrimary.checkServerStatus()
             print("Primary Network: {}".format(primaryStatus))
             database = dbObject.connectDataBase()
+            if (primaryStatus == 1):
+                if (fileObject.readCurrentTask() == '1'):
+                    turnLEDON('OFF')
+                    turnLEDON('B')
+            elif (primaryStatus == 0):
+                if (fileObject.readCurrentTask() == '1'):
+                    turnLEDON('OFF')
+                    turnLEDON('R+B')
             if (primaryStatus == 0 and primary == '1'):
                 primary = '0'
                 fileObject.updateNetworkStatus(primary,secondary)
@@ -59,8 +111,8 @@ if __name__ == '__main__':
                         print("Secondary Check Update Required Server: 1, Check Update Required Local: 0")
                         dbObject.resetUpdatedRequiredStatus(2, database)
                         apiObjectSecondary.confirmUpdateRequest(deviceId)
-                        secondary = '1'
-                        fileObject.updateNetworkStatus(primary,secondary)
+                    secondary = '1'
+                    fileObject.updateNetworkStatus(primary,secondary)
                 
                 if (secondaryStatus == 1):
                     try:

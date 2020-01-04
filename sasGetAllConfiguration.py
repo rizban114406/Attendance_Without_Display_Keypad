@@ -189,6 +189,7 @@ def checkForChangeinDeviceInfo(requiredDetils,deviceInfo):
         return 0
     
 def checkForServerAddressInfo(requiredDetils):
+    global apiObjectSecondary
     try:
         print("Change In Device Server Info: {}\n".format(requiredDetils))
         if (requiredDetils['baseurl'] is not None and requiredDetils['baseurl'] is not None):    
@@ -204,11 +205,15 @@ def checkForServerAddressInfo(requiredDetils):
                     dbObject.updateConfigurationTable(requiredDetils['baseurl'],\
                                                       requiredDetils['suburl'],\
                                                       database)
+                    print("Server Info Updated")
+                    apiObjectSecondary = sasAllAPI(2)
                     return 2
             else:
                 dbObject.insertIntoConfigurationTable(requiredDetils['baseurl'],\
                                                       requiredDetils['suburl'],\
                                                       database)
+                apiObjectSecondary = sasAllAPI(2)
+                print("Server Info Inserted\n")
                 return 2
         return 1
     except Exception as e:

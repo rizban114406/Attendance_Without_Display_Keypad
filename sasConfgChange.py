@@ -56,8 +56,10 @@ def generateDataToUpdateInfor():
     print("Device Updated Info: {}".format(dataToSend))
     return dataToSend
 #dbObject.createTableWifiSettings(database)
-dbObject.setUpdatedRequiredStatus(2, database)
-dataToSend2 = generateDataToUpdateInfor()
-dataToSend = json.dumps(dataToSend2)
-payload = {"data" : dataToSend}
-print("Data To Be Sent: {}".format(payload))
+#dbObject.setUpdatedRequiredStatus(2, database)
+#dataToSend2 = generateDataToUpdateInfor()
+#dataToSend = json.dumps(dataToSend2)
+#payload = {"data" : dataToSend}
+#print("Data To Be Sent: {}".format(payload))
+#appKey = "924204" + "-" + "6d2a9b43bfaaa2a13472" + "-" + "b66493c060ed6685c9cc" + "-" + "mt1"
+#fileObject.updatePusherAppKey(appKey)

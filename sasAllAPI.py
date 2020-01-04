@@ -17,6 +17,7 @@ class sasAllAPI:
         try:
 #            mainURL = self.mainURL + "server_heartbit"
             mainURL = self.mainURL + "check_server_status"
+            print(mainURL)
             r = requests.get(mainURL,timeout = 2)
             print("Data Received {}".format(r.content))
             status = r.status_code
@@ -37,6 +38,7 @@ class sasAllAPI:
 #                       "fingermatrix" : matrix , \
 #                       "deviceid"     : deviceId, \
 #                       "companyid"    : selectedCompany}
+            print(mainURL)
             payload = {"uniqueid"     : uniqueId, \
                        "fingermatrix" : matrix , \
                        "deviceid"     : deviceId}
@@ -57,6 +59,7 @@ class sasAllAPI:
         try:
 #            mainURL = self.mainURL + "device_data"
             mainURL = self.mainURL + "device_event_data"
+            print(mainURL)
             dataToSend = json.dumps(mainData,sort_keys = True)
             payload = {"data" : dataToSend}
             print("Data To Be Sent: {}".format(payload))
@@ -89,6 +92,7 @@ class sasAllAPI:
         try:
 #            mainURL = self.mainURL + "fingerprint_sync"
             mainURL = self.mainURL + "sync_fingerprint_info"
+            print(mainURL)
             dataToSend = json.dumps(receivedData)
             payload = {"data"     : dataToSend,\
                        "deviceid" : deviceId}
@@ -163,6 +167,7 @@ class sasAllAPI:
     def checkUpdateRequest(self,deviceId):
         try:
             mainURL = self.mainURL + "check_update_request"
+            print(mainURL)
             payload = {"deviceid" : deviceId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
@@ -181,6 +186,7 @@ class sasAllAPI:
     def confirmUpdateRequest(self,deviceId):
         try:
             mainURL = self.mainURL + "confirm_update_request"
+            print(mainURL)
             payload = {"deviceid" : deviceId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
@@ -197,6 +203,7 @@ class sasAllAPI:
     def confirmSyncStatusReceived(self,hardwareId):
         try:
             mainURL = self.mainURL + "update_sync_status"
+            print(mainURL)
             payload = {"hardwareid" : hardwareId }
             print("Data To Be Sent: {}".format(payload))
             r = requests.post(mainURL, data = payload,timeout = 3)
@@ -233,6 +240,7 @@ class sasAllAPI:
     def updateDeviceInfoToServer(self,receivedData):
         try:
             mainURL = self.mainURL + "update_device_info"
+            print(mainURL)
             dataToSend = json.dumps(receivedData)
             payload = {"data" : dataToSend}
             print("Data To Be Sent: {}".format(payload))
@@ -250,6 +258,7 @@ class sasAllAPI:
     def confirmDeviceStatus(self,hardwareId,flag):
         try:
             mainURL = self.mainURL + "change_device_status"
+            print(mainURL)
             payload = {"hardwareid" : hardwareId,\
                        "flag" : flag}
             print("Data To Be Sent: {}".format(payload))

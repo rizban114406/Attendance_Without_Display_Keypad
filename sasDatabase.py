@@ -352,7 +352,7 @@ class sasDatabase:
         curs = database.cursor()
         curs.execute ("SELECT baseUrl,subUrl FROM configurationTable WHERE id = ?",(locationType,)) #1=primary, 2=seondary
         desiredDetails = curs.fetchone()
-        print(desiredDetails)
+        print("Location Type: {}, Details: {}".format(locationType,desiredDetails))
         if (desiredDetails != None):
             return desiredDetails
         else:

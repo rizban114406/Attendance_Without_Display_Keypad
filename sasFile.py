@@ -75,6 +75,24 @@ class sasFile:
         file.write(storedIndex)
         file.close()
         
+    def readPusherAppKey(self):
+        try:     
+            appKey = []
+            file = open('pusherAppKey.txt','r')
+            template = file.readline()
+            file.close()
+        except Exception as e:
+            self.updateStoredIndex("0-0-0-0")
+            template = "0-0-0-0"
+            self.updateExceptionMessage("sasFile{readStoredIndex}",str(e))
+        appKey = template.split('-')
+        return (appKey[0],appKey[1],appKey[2],appKey[3])
+    
+    def updatePusherAppKey(self,appKey):
+        file = open('pusherAppKey.txt', 'w+')
+        file.write(appKey)
+        file.close()
+        
     def readRequestId(self):
         try:           
             file = open('requestId.txt','r')
