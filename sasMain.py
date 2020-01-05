@@ -632,7 +632,7 @@ def turnLEDON(color):
 def turnOnBuzzer(access):
     GPIO.output(buzzerPin, 1)
     if access == 1:
-        t.sleep(.5)
+        t.sleep(.4)
     else:
         t.sleep(.1)
         GPIO.output(buzzerPin, 0)
@@ -695,13 +695,13 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
 def accessDenied():
     turnLEDON('R') #RED
     turnOnBuzzer(0)
-    t.sleep(.5)
+#    t.sleep(.5)
     turnLEDON('OFF') #OFF
     
 def accessGranted():
     turnLEDON('G') #GREEN
     turnOnBuzzer(1)
-    t.sleep(.5)
+#    t.sleep(.5)
     turnLEDON('OFF') #OFF
     
 def matchFingerPrint(f,dbObject,database):
@@ -820,7 +820,7 @@ def workWithRFSensor():
 
 def functionKillProgram():
     #print("Killing Started")
-    t.sleep(900)
+    t.sleep(1800)
     task = fileObject.readCurrentTask()
     if task != '1':
         while 1:

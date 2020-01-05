@@ -56,7 +56,7 @@ if __name__ == '__main__':
     if deviceId != 0:
         if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
            dbObject.checkAddressUpdateRequired(1, database) == 0):
-            print("Primary Check Update Request Server: 0, Check Update Required Local: 0")
+            print("Primary Check Update Request Server: 0, Check Update Required Local: 0\n")
             dbObject.resetUpdatedRequiredStatus(1,database)
             apiObjectPrimary.confirmUpdateRequest(deviceId)
             
@@ -64,7 +64,7 @@ if __name__ == '__main__':
            dbObject.checkAddressUpdateRequired(2, database) == 0):
             print("Secondary Address Available: 1, Check Update Required Local: 0")
             if (apiObjectSecondary.checkUpdateRequest(deviceId) == 0):
-                print("Secondary Check Update Required Server: 0")
+                print("Secondary Check Update Required Server: 0\n")
                 dbObject.resetUpdatedRequiredStatus(2,database)
                 apiObjectSecondary.confirmUpdateRequest(deviceId)
             
@@ -75,10 +75,12 @@ if __name__ == '__main__':
             print("Primary Network: {}".format(primaryStatus))
             database = dbObject.connectDataBase()
             if (primaryStatus == 1):
+                print("Network is Available")
                 if (fileObject.readCurrentTask() == '1'):
                     turnLEDON('OFF')
                     turnLEDON('B')
             elif (primaryStatus == 0):
+                print("Network is Not Available")
                 if (fileObject.readCurrentTask() == '1'):
                     turnLEDON('OFF')
                     turnLEDON('R+B')
@@ -92,8 +94,8 @@ if __name__ == '__main__':
                     print("Primary Check Update Request Server: 0, Check Update Required Local: 0")
                     dbObject.resetUpdatedRequiredStatus(1, database)
                     apiObjectPrimary.confirmUpdateRequest(deviceId)
-                    primary = '1'
-                    fileObject.updateNetworkStatus(primary,secondary)
+                primary = '1'
+                fileObject.updateNetworkStatus(primary,secondary)
             
             if (dbObject.checkSecondaryAddressAvailable(database) == 1):
                 print("Secondary Address Available: 1")
@@ -149,7 +151,7 @@ if __name__ == '__main__':
                                 else:
                                     print(message)
                                 dbObject.databaseClose(database)
-                        time.sleep(3)
+                        time.sleep(5)
                         continue
                     except Exception as e:
                         #print str(e)

@@ -18,7 +18,7 @@ class sasAllAPI:
 #            mainURL = self.mainURL + "server_heartbit"
             mainURL = self.mainURL + "check_server_status"
             print(mainURL)
-            r = requests.get(mainURL,timeout = 2)
+            r = requests.get(mainURL,timeout = 1)
             print("Data Received {}".format(r.content))
             status = r.status_code
             if (status == 200):
@@ -252,7 +252,7 @@ class sasAllAPI:
             else:
                 return 0       
         except Exception as e:
-            fileObject.updateExceptionMessage("sasAllAPI{getDataToSync}",str(e))
+            fileObject.updateExceptionMessage("sasAllAPI{updateDeviceInfoToServer}",str(e))
             return 0
         
     def confirmDeviceStatus(self,hardwareId,flag):

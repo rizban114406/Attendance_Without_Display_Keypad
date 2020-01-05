@@ -521,7 +521,7 @@ class sasDatabase:
         curs = database.cursor()
         curs.execute ("SELECT * FROM deviceInfoTable WHERE id = 1")
         desiredDetails = curs.fetchone()
-        print("Event Data To Be Sent: {}".format(desiredDetails))
+        print("Device Info From Database: {}".format(desiredDetails))
         if (len(desiredDetails) > 0):
             return desiredDetails
         else:
