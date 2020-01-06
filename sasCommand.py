@@ -135,6 +135,14 @@ while True:
                         if (fileObject.readSyncStatus() == '0'):
                             fileObject.updateSyncStatus('1')
                         output = ""
+                    
+                    if (commandRequested == "REBOOT_DEVICE"):
+                        if (fileObject.readCurrentTask() == '1'):
+                            command = "/usr/bin/sudo /sbin/shutdown -r now"
+                            import subprocess
+                            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+                            process.communicate()[0]
+                        output = ""
                             
                     if (commandRequested == "UPDATE_DEVICE_INFO"):
                         from sasDatabase import sasDatabase

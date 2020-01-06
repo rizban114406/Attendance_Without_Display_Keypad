@@ -254,6 +254,28 @@ def generateDataToUpdateInfor(deviceInfo,urls):
     print("Device Updated Info: {}\n".format(dataToSend))
     return dataToSend
 
+def checkPusherConfiguration(deviceInfo):
+    try:
+        appId, key, secret, cluster = fileObject.readPusherAppKey()
+        isChangeRequired = 0
+        if (appId != deviceInfo['appId']):
+            appId = deviceInfo['appId']
+            isChangeRequired = 1
+        if (key != deviceInfo['key']):
+            key = deviceInfo['key']
+            isChangeRequired = 1
+        if (secret != deviceInfo['secret']):
+            secret = deviceInfo['secret']
+            isChangeRequired = 1
+        if (cluster != deviceInfo['cluster']):
+            cluster = deviceInfo['cluster']
+            isChangeRequired = 1
+        if isChangeRequired == 1:
+            appKey = appId + "-" + key + "-" + secret + "-" + cluster
+            fileObject.updatePusherAppKey(appKey)    
+    except Exception as e:
+        fileObject.updateExceptionMessage("sasGetAllConfiguration{checkPusherConfiguration}: ",str(e))
+
 osVersion = fileObject.readCurrentVersion()
 if __name__ == '__main__':
     if(apiObjectPrimary.checkServerStatus() == 1 or apiObjectSecondary.checkServerStatus() == 1):
@@ -267,6 +289,7 @@ if __name__ == '__main__':
             print("Received Data From Create Device: {}\n".format(receivedData))
             if receivedData != '0' and receivedData != "Server Error":
                 dbObject.insertIntoDeviceInfoTable(hardwareId,receivedData['id'],osVersion,ipAddress,database)
+                checkPusherConfiguration(receivedData)
                 print("New Device is inserted Successfully\n")
             else:
                 print("Device Entry Not Successful\n")
@@ -286,7 +309,7 @@ if __name__ == '__main__':
                             checkForFirmwareUpdate(requiredDetils['osversion'],\
                                                    requiredDetils['devicecodeurl'],\
                                                    requiredDetils['devicecodename'])
-                            
+                        checkPusherConfiguration(requiredDetils) 
                         deviceInfoUpdateStatus = checkForChangeinDeviceInfo(requiredDetils, deviceInfo)
                         configInfoUpdateStatus = checkForServerAddressInfo(requiredDetils)
                         networkSettings = requiredDetils['networksettings']

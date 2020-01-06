@@ -52,6 +52,7 @@ database = dbObject.connectDataBase()
 apiObjectPrimary = sasAllAPI(1)
 apiObjectSecondary = sasAllAPI(2)
 if __name__ == '__main__':
+    global apiObjectSecondary
     deviceId = dbObject.getDeviceId(database)
     if deviceId != 0:
         if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
@@ -156,9 +157,11 @@ if __name__ == '__main__':
                     except Exception as e:
                         #print str(e)
 #                        dbObject.databaseClose(database)
-                        fileObject.updateExceptionMessage("sasEvents{__main__}",str(e)) 
+                        fileObject.updateExceptionMessage("sasEvents{__main__}",str(e))
+                
             else:
                 print("Secondary Address Available: 0")
+                apiObjectSecondary = sasAllAPI(2)
                 dbObject.truncateEventListTable(database)
                 time.sleep(5)
             
