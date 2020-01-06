@@ -742,7 +742,7 @@ def workWithFingerPrintSensor():
                     print("Device Syncronization Request Flag: {}".format(syncStatus))
                     if (currentTask == '2' or syncStatus == '2'):
                         break
-                    t.sleep(.8)
+                    t.sleep(.5)
                 lock.acquire()
                 print("Inside Finger Recognition Part")
                 currentTask = fileObject.readCurrentTask()
