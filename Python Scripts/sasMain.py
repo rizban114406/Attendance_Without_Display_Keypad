@@ -384,7 +384,7 @@ def enrollmentLEDIndicator(color):
     elif color == 'G':
         turnLEDON('G')
         turnOnBuzzer(1)
-        t.sleep(1) # Wait for the User to Remove the Finger
+#        t.sleep(1) # Wait for the User to Remove the Finger
 #        turnLEDON('OFF')
         
     
@@ -424,7 +424,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
 #                    sendPusherCommand(hardwareId,"REMOVED1",requestId) # Send Removed Command To the Server First Time
                     apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REMOVED1")
-                    turnLEDON('OFF')
+#                    turnLEDON('OFF')
                     turnLEDON('G+B')
                     t.sleep(1)
                     print("Removed Sent")
@@ -465,7 +465,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
                                 if (x == False  and continueEnrollment == True): # If Enrollment is Not Timed Out and Enrollment is Not Cancelled
 #                                    sendPusherCommand(hardwareId,"REMOVED2",requestId)
                                     apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REMOVED2")
-                                    turnLEDON('OFF')
+#                                    turnLEDON('OFF')
                                     turnLEDON('G+B')
                                     t.sleep(1)
                                     
@@ -572,7 +572,7 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REGISTED_SUCCESSFULLY")
                 enrollmentLEDIndicator('G')
                 fileObject.updateRequestId("0")
-                turnLEDON('OFF')
+#                turnLEDON('OFF')
                 print("Registered Successfuly")
                 #GPIO INDICATOR
             else:
@@ -580,11 +580,11 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"NOT_REGISTED_SUCCESSFULLY")
                 enrollmentLEDIndicator('R')
                 fileObject.updateRequestId("0")
-                turnLEDON('OFF')
+#                turnLEDON('OFF')
                 print("Registered Unsuccessfuly")
         else:
             enrollmentLEDIndicator('R')
-            turnLEDON('OFF')
+#            turnLEDON('OFF')
             fileObject.updateRequestId("0")
     except Exception as e:
         print("Exception From : {}\n Exception Message: {}".format("enrollNewEmployee",str(e)))
@@ -638,7 +638,7 @@ def turnOnBuzzer(access):
         GPIO.output(buzzerPin, 0)
         t.sleep(.1)
         GPIO.output(buzzerPin, 1)
-        t.sleep(.1)
+        t.sleep(.2)
     GPIO.output(buzzerPin, 0)
     
 def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):
@@ -657,10 +657,8 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag,\
                                      database)
             print("No Card Record Found")
-            turnLEDON('R') #RED
-            turnOnBuzzer(0)
-            t.sleep(.5)
-            turnLEDON('OFF') #OFF
+            accessDenied()
+#            turnLEDON('OFF') #OFF
         else :
             print("Card Record Found")
             GPIO.output(greenLightPin, 1)
@@ -670,10 +668,8 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag,\
                                      database)
             print("Event Created Successfully")
-            turnLEDON('G') #GREEN
-            turnOnBuzzer(1)
-            t.sleep(.5)
-            turnLEDON('OFF') #OFF
+            accessGranted()
+#            turnLEDON('OFF') #OFF
     elif attendanceFlag == '1': #################################################Check For Secondary Address in event script######
         employeeDetails = dbObject.getEmployeeDetails(employeeCardorFingerNumber,database)
         print("Punched Employee ID: {}".format(employeeDetails))
@@ -695,14 +691,14 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
 def accessDenied():
     turnLEDON('R') #RED
     turnOnBuzzer(0)
-#    t.sleep(.5)
-    turnLEDON('OFF') #OFF
+    t.sleep(.5)
+#    turnLEDON('OFF') #OFF
     
 def accessGranted():
     turnLEDON('G') #GREEN
     turnOnBuzzer(1)
-#    t.sleep(.5)
-    turnLEDON('OFF') #OFF
+    t.sleep(.5)
+#    turnLEDON('OFF') #OFF
     
 def matchFingerPrint(f,dbObject,database):
     try:
@@ -733,7 +729,8 @@ def workWithFingerPrintSensor():
             dbObject = sasDatabase()
             database = dbObject.connectDataBase()
             print("Connected With Database From workWithFingerPrintSensor")
-            while True:  
+            while True:
+                turnLEDON('OFF')
                 while (f.readImage() == False):
 #                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
                     currentTask = fileObject.readCurrentTask()
@@ -798,6 +795,7 @@ def workWithRFSensor():
             database = dbObject.connectDataBase()
             while True:
 #                print("Current workWithRFSensor Thread ID: {}".format(threading.current_thread()))
+                turnLEDON('OFF')
                 rfScannerValue = readFromRFIDScanner()
                 employeeCardNumber = int(rfScannerValue,16)
                 print("Read Card Number: {}".format(employeeCardNumber))

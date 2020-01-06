@@ -68,7 +68,7 @@ if __name__ == '__main__':
                 print("Secondary Check Update Required Server: 0\n")
                 dbObject.resetUpdatedRequiredStatus(2,database)
                 apiObjectSecondary.confirmUpdateRequest(deviceId)
-            
+        dbObject.databaseClose(database)           
         while True:
             primary, secondary = fileObject.readNetworkStatus().split('-')
             print("Primary Network: {}, Secondary Network: {}".format(primary,secondary))

@@ -128,9 +128,9 @@ class sasDatabase:
         desiredDetails = curs.fetchone()
 #        print("Desired Details of Employee: {}".format(desiredDetails))
         if (desiredDetails != None):
-            return desiredDetails
-        else:
-            return '0'
+            if (len(desiredDetails) > 0):
+                return desiredDetails    
+        return '0'
     ####################### All Functions Regarding Employee Information Table ###################
     
     def createTableTempTableToSync(self,database): # Create A Temporary Table To Sync With The Server
@@ -327,9 +327,9 @@ class sasDatabase:
         desiredDetails = curs.fetchone()
 #        print(desiredDetails)
         if (desiredDetails != None):
-            return desiredDetails
-        else:
-            return '0'
+            if (len(desiredDetails) > 0):
+                return desiredDetails
+        return '0'
     ####################### All Functions Regarding Employee Card Info Table ###################
 
     ####################### All Functions Regarding Configuration Info Table ###################
@@ -379,18 +379,18 @@ class sasDatabase:
         curs.execute ("SELECT updateRequired FROM configurationTable WHERE id = ? and updateRequired = '0'",(locationType,)) #1=primary, 2=seondary
         desiredDetails = curs.fetchone()
         if (desiredDetails != None):
-            return 1
-        else:
-            return 0
+            if(len(desiredDetails) > 0):
+                return 1
+        return 0
         
     def checkServerUpdateStatus(self, locationType, database):
         curs = database.cursor()
         curs.execute ("SELECT serverUpdated FROM configurationTable WHERE id = ? and serverUpdated = '0'",(locationType,)) #1=primary, 2=seondary
         desiredDetails = curs.fetchone()
         if (desiredDetails != None):
-            return 1
-        else:
-            return 0
+            if(len(desiredDetails) > 0):
+                return 1
+        return 0
         
     def checkSecondaryAddressAvailable(self, database):
         curs = database.cursor()
@@ -398,9 +398,9 @@ class sasDatabase:
         desiredDetails = curs.fetchone()
         print(desiredDetails)
         if (desiredDetails != None):
-            return 1
-        else:
-            return 0
+            if(len(desiredDetails) > 0):
+                return 1
+        return 0
         
     def updateConfigurationTable(self, baseURL, subURL, database):
         curs = database.cursor()
@@ -603,9 +603,9 @@ class sasDatabase:
         desiredDetails = curs.fetchall()
         print(desiredDetails)
         if (desiredDetails != None):
-            return desiredDetails
-        else:
-            return '0'
+            if (len(desiredDetails) > 0):
+                return desiredDetails
+        return '0'
         
     def countWifiConfigs(self,database):
         curs = database.cursor()
