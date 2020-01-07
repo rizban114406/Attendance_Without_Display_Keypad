@@ -137,6 +137,8 @@ def checkEmployeeInfoTable(dbObject,database):
         
 def syncUsersToSensor(f,dbObject,database):
     try:
+        global apiObject
+        apiObject = sasAllAPI(2)
         print("Inside Function: {}".format("syncUsersToSensor"))
         getDataToDelete = dbObject.getInfoFromTempTableToDelete(database)
         print("Finger Delete Request: {}".format(getDataToDelete))
@@ -150,13 +152,13 @@ def syncUsersToSensor(f,dbObject,database):
                 dbObject.deleteFromTempTableToSync(reading[0],reading[1],database)
                 print("Deleted Employee Info: {}".format(reading))
                 t.sleep(.2)
-                turnLEDON('OFF')
+#                turnLEDON('OFF')
             for reading in getDataToSync:
                 turnLEDON('R+G')
                 createNewTemplateToSync(f,reading,dbObject,database)
                 print("Enrolled Employee Info: {}".format(reading[0:1]))
                 t.sleep(.3)
-                turnLEDON('OFF')
+#                turnLEDON('OFF')
             updateListOfUsedTemplates(f)
             fileObject.updateSyncStatus('0')
             print("Finger Info Is Synced To the Device")
@@ -550,6 +552,8 @@ def createNewTemplate(f,uniqueId,deviceId,dbObject,database):
         return receivedData[0]
         
 def enrollNewEmployee(f,deviceId,dbObject,database):
+    global apiObject
+    apiObject = sasAllAPI(2)
     print("Inside Function: {}".format("enrollNewEmployee"))
     currentDateTime,currentTime = checkCurrentDateTime()
     print("Current Datetime: {}".format(currentDateTime))
@@ -691,13 +695,13 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
 def accessDenied():
     turnLEDON('R') #RED
     turnOnBuzzer(0)
-    t.sleep(.5)
+#    t.sleep(.5)
 #    turnLEDON('OFF') #OFF
     
 def accessGranted():
     turnLEDON('G') #GREEN
     turnOnBuzzer(1)
-    t.sleep(.5)
+#    t.sleep(.5)
 #    turnLEDON('OFF') #OFF
     
 def matchFingerPrint(f,dbObject,database):
@@ -818,13 +822,14 @@ def workWithRFSensor():
 
 def functionKillProgram():
     #print("Killing Started")
-    t.sleep(1800)
-    task = fileObject.readCurrentTask()
-    if task != '1':
+    t.sleep(3600)
+    apiObjectPrimary = sasAllAPI(1)
+    if(apiObjectPrimary.checkServerStatus()):
+        os.system("hwclock -w")
+    if fileObject.readCurrentTask() != '1':
         while 1:
             print("Current functionKillProgram Thread ID: {}".format(threading.current_thread()))
-            task = fileObject.readCurrentTask()
-            if task == '1':
+            if fileObject.readCurrentTask() == '1':
                 break
             t.sleep(1)
     os.system('sudo pkill -f sasMain.py')

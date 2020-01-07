@@ -605,7 +605,7 @@ class sasDatabase:
         if (desiredDetails != None):
             if (len(desiredDetails) > 0):
                 return desiredDetails
-        return '0'
+        return []
         
     def countWifiConfigs(self,database):
         curs = database.cursor()

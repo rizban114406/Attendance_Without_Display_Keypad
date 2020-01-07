@@ -19,7 +19,7 @@ class sasAllAPI:
             mainURL = self.mainURL + "check_server_status"
             print(mainURL)
             r = requests.get(mainURL,timeout = 1)
-            print("Data Received {}".format(r.content))
+            print("Data Received {}\n".format(r.content))
             status = r.status_code
             if (status == 200):
                 return 1

@@ -100,6 +100,7 @@ if __name__ == '__main__':
             
             if (dbObject.checkSecondaryAddressAvailable(database) == 1):
                 print("Secondary Address Available: 1")
+                apiObjectSecondary = sasAllAPI(2)
                 secondaryStatus = apiObjectSecondary.checkServerStatus()
                 print("Secondary Network: {}".format(secondaryStatus))
                 if (secondaryStatus == 0 and secondary == '1'):
