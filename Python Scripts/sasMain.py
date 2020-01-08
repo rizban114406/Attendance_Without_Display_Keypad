@@ -642,7 +642,7 @@ def turnOnBuzzer(access):
         GPIO.output(buzzerPin, 0)
         t.sleep(.1)
         GPIO.output(buzzerPin, 1)
-        t.sleep(.2)
+        t.sleep(.1)
     GPIO.output(buzzerPin, 0)
     
 def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):
@@ -743,7 +743,7 @@ def workWithFingerPrintSensor():
                     print("Device Syncronization Request Flag: {}".format(syncStatus))
                     if (currentTask == '2' or syncStatus == '2'):
                         break
-                    t.sleep(.5)
+                    t.sleep(.01)
                 lock.acquire()
                 print("Inside Finger Recognition Part")
                 currentTask = fileObject.readCurrentTask()

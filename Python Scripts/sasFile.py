@@ -52,8 +52,8 @@ class sasFile:
     def updateExceptionMessage(self,exceptionScript,exceptionMessage):
         nowTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         message = "Exception From :"     + exceptionScript  + \
-                  " Exception Message: " + exceptionMessage + \
-                  " Time: "              + str(nowTime)     + "\n"
+                  "\nException Message: " + exceptionMessage + \
+                  "\nTime: "              + str(nowTime)     + "\n\n"
         file = open('exceptionMessage.txt', 'a+')
         file.write(message)
         file.close()
