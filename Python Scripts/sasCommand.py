@@ -76,6 +76,7 @@ def connect_handler(data):
 #cluster = "mt1"
 while True:
     appId, key, secret, cluster = fileObject.readPusherAppKey()
+    print("Pusher appId: {}, Key: {}, secret: {}, cluster: {}".format(appId, key, secret, cluster))
     if len(appId) > 5:
         print("Pusher appId: {}, Key: {}, secret: {}, cluster: {}".format(appId, key, secret, cluster))
         pusherReceive = pysher.Pusher(key)

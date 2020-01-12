@@ -55,6 +55,9 @@ if __name__ == '__main__':
     global apiObjectSecondary
     deviceId = dbObject.getDeviceId(database)
     if deviceId != 0:
+        if (dbObject.checkSecondaryAddressAvailable(database) == 1 and\
+            fileObject.readSyncStatus() == '0'):
+            fileObject.updateSyncStatus('1')
         if(apiObjectPrimary.checkUpdateRequest(deviceId) == 0 and \
            dbObject.checkAddressUpdateRequired(1, database) == 0):
             print("Primary Check Update Request Server: 0, Check Update Required Local: 0\n")
@@ -153,7 +156,7 @@ if __name__ == '__main__':
                                 else:
                                     print(message)
                                 dbObject.databaseClose(database)
-                        time.sleep(5)
+                        time.sleep(10)
                         continue
                     except Exception as e:
                         #print str(e)
@@ -162,7 +165,7 @@ if __name__ == '__main__':
                 
             else:
                 print("Secondary Address Available: 0")
-                apiObjectSecondary = sasAllAPI(2)
                 dbObject.truncateEventListTable(database)
-                time.sleep(5)
+                time.sleep(10)
+                apiObjectSecondary = sasAllAPI(2)
             
