@@ -17,15 +17,20 @@ redLightPin = 21
 greenLightPin = 20
 blueLightPin = 13
 buzzerPin = 27
+doorLockPin = 26
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(redLightPin, GPIO.OUT)
 GPIO.setup(greenLightPin, GPIO.OUT)
 GPIO.setup(blueLightPin, GPIO.OUT)
 GPIO.setup(buzzerPin, GPIO.OUT)
-
+GPIO.setup(doorLockPin, GPIO.OUT)
+def doorStatus(status):
+    if status == 1:
+        GPIO.output(doorLockPin, status)
+    else:
+        GPIO.output(doorLockPin, status)
 
 from pyfingerprint.pyfingerprint import PyFingerprint
-
 from sasFile import sasFile
 fileObject = sasFile()
 appId = '860616'
@@ -48,6 +53,7 @@ def getHardwareId():
     return cpuserial
 
 hardwareId = getHardwareId()
+doorStatus(0)
 #hardwareId = "asdasdas"
 currentTask = '1'
 syncStatus = '0'
@@ -699,6 +705,7 @@ def accessDenied():
 #    turnLEDON('OFF') #OFF
     
 def accessGranted():
+    doorStatus(0)
     turnLEDON('G') #GREEN
     turnOnBuzzer(1)
 #    t.sleep(.5)
@@ -735,6 +742,7 @@ def workWithFingerPrintSensor():
             print("Connected With Database From workWithFingerPrintSensor")
             while True:
                 turnLEDON('OFF')
+                doorStatus(1)
                 while (f.readImage() == False):
 #                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
                     currentTask = fileObject.readCurrentTask()
@@ -800,6 +808,7 @@ def workWithRFSensor():
             while True:
 #                print("Current workWithRFSensor Thread ID: {}".format(threading.current_thread()))
                 turnLEDON('OFF')
+                doorStatus(1)
                 rfScannerValue = readFromRFIDScanner()
                 employeeCardNumber = int(rfScannerValue,16)
                 print("Read Card Number: {}".format(employeeCardNumber))
