@@ -2,50 +2,9 @@ import time
 from sasDatabase import sasDatabase
 from sasAllAPI import sasAllAPI
 from sasFile import sasFile
-import RPi.GPIO as GPIO
+from sasGPIO import sasGPIO
 
-redLightPin = 21
-greenLightPin = 20
-blueLightPin = 13
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(redLightPin, GPIO.OUT)
-GPIO.setup(greenLightPin, GPIO.OUT)
-GPIO.setup(blueLightPin, GPIO.OUT)
-def turnLEDON(color):
-    print("Requested Color: {}".format(color))
-    if color == 'R':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 0)
-    elif color == 'G':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 0)
-    elif color == 'B':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'W':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'R+G':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 0)
-    elif color == 'G+B':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'R+B':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'OFF':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 0)
-        
+gpioObject = sasGPIO()
 fileObject = sasFile()
 dbObject = sasDatabase()
 database = dbObject.connectDataBase()
@@ -81,13 +40,13 @@ if __name__ == '__main__':
             if (primaryStatus == 1):
                 print("Network is Available")
                 if (fileObject.readCurrentTask() == '1'):
-                    turnLEDON('OFF')
-                    turnLEDON('B')
+                    gpioObject.turnLEDON('OFF')
+                    gpioObject.turnLEDON('B')
             elif (primaryStatus == 0):
                 print("Network is Not Available")
                 if (fileObject.readCurrentTask() == '1'):
-                    turnLEDON('OFF')
-                    turnLEDON('R+B')
+                    gpioObject.turnLEDON('OFF')
+                    gpioObject.turnLEDON('R+B')
             if (primaryStatus == 0 and primary == '1'):
                 primary = '0'
                 fileObject.updateNetworkStatus(primary,secondary)
@@ -156,7 +115,7 @@ if __name__ == '__main__':
                                 else:
                                     print(message)
                                 dbObject.databaseClose(database)
-                        time.sleep(10)
+                        time.sleep(20)
                         continue
                     except Exception as e:
                         #print str(e)
@@ -166,6 +125,6 @@ if __name__ == '__main__':
             else:
                 print("Secondary Address Available: 0")
                 dbObject.truncateEventListTable(database)
-                time.sleep(10)
+                time.sleep(20)
                 apiObjectSecondary = sasAllAPI(2)
             

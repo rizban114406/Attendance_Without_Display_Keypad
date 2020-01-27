@@ -9,34 +9,17 @@ import datetime
 import time as t
 import threading
 import serial
-import pusher as push
-import json
-import RPi.GPIO as GPIO
-
-redLightPin = 21
-greenLightPin = 20
-blueLightPin = 13
-buzzerPin = 27
-doorLockPin = 26
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(redLightPin, GPIO.OUT)
-GPIO.setup(greenLightPin, GPIO.OUT)
-GPIO.setup(blueLightPin, GPIO.OUT)
-GPIO.setup(buzzerPin, GPIO.OUT)
-GPIO.setup(doorLockPin, GPIO.OUT)
-def doorStatus(status):
-    if status == 1:
-        GPIO.output(doorLockPin, status)
-    else:
-        GPIO.output(doorLockPin, status)
-
+#import pusher as push
+#import json
+from sasGPIO import sasGPIO
+gpioObject = sasGPIO()
 from pyfingerprint.pyfingerprint import PyFingerprint
 from sasFile import sasFile
 fileObject = sasFile()
-appId = '860616'
-key = 'de47d29a0309c4e2c87e'
-secret = '87b85c977153726607e7'
-pusherSend = push.Pusher(appId, key, secret)
+#appId = '860616'
+#key = 'de47d29a0309c4e2c87e'
+#secret = '87b85c977153726607e7'
+#pusherSend = push.Pusher(appId, key, secret)
 def getHardwareId():
     # Extract serial from cpuinfo file
     cpuserial = ""
@@ -53,7 +36,7 @@ def getHardwareId():
     return cpuserial
 
 hardwareId = getHardwareId()
-doorStatus(0)
+gpioObject.doorStatus(0)
 #hardwareId = "asdasdas"
 currentTask = '1'
 syncStatus = '0'
@@ -92,13 +75,6 @@ def createNewTemplateToSync(f,employeeInfo,dbObject,database):
         characteristics.append(int(x[i]))
     f.uploadCharacteristics(0x01,characteristics)
     f.storeTemplate(int(employeeInfo[1]),0x01)
-#    import re
-#    sp = re.split(' |-|',str(employeeInfo[1]))
-#    if(len(sp) == 2):
-#        employee = sp[1]
-#    else:
-#        employee = sp[0]
-
     dbObject.insertNewEmployee(employeeInfo[0], \
                                employeeInfo[1], \
                                database)
@@ -152,19 +128,17 @@ def syncUsersToSensor(f,dbObject,database):
         print("Finger Enrollment Request: {}".format(getDataToSync))
         if (len(getDataToDelete) > 0 or len(getDataToSync) > 0):
             for reading in getDataToDelete:
-                turnLEDON('R+G')
+                gpioObject.turnLEDON('R+G')
                 f.deleteTemplate(int(reading[1]))
                 dbObject.deleteFromEmployeeInfoTable(reading[0],reading[1],database)
                 dbObject.deleteFromTempTableToSync(reading[0],reading[1],database)
                 print("Deleted Employee Info: {}".format(reading))
                 t.sleep(.2)
-#                turnLEDON('OFF')
             for reading in getDataToSync:
-                turnLEDON('R+G')
+                gpioObject.turnLEDON('R+G')
                 createNewTemplateToSync(f,reading,dbObject,database)
                 print("Enrolled Employee Info: {}".format(reading[0:1]))
                 t.sleep(.3)
-#                turnLEDON('OFF')
             updateListOfUsedTemplates(f)
             fileObject.updateSyncStatus('0')
             print("Finger Info Is Synced To the Device")
@@ -301,13 +275,13 @@ def calculateTimeDifference(currentDateTime,timeLimit):
         return False
     
 #####################################Enrollment Process################################
-def sendPusherCommand(hardwareId,command,requestId):
-    deviceInfoData = {"hardwareId" : hardwareId,\
-                      "command"    : command,\
-                      "requestId"  : requestId}
-    print(deviceInfoData)
-    commandToSend = json.dumps(deviceInfoData)
-    pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
+#def sendPusherCommand(hardwareId,command,requestId):
+#    deviceInfoData = {"hardwareId" : hardwareId,\
+#                      "command"    : command,\
+#                      "requestId"  : requestId}
+#    print(deviceInfoData)
+#    commandToSend = json.dumps(deviceInfoData)
+#    pusherSend.trigger('enroll-feed-channel', 'enroll-feed-event', commandToSend)
     
 def takefingerPrint(f,currentDateTime):
     print("Inside Function: {}".format("takefingerPrint"))
@@ -318,17 +292,17 @@ def takefingerPrint(f,currentDateTime):
             x = calculateTimeDifference(currentDateTime,ENROLLMENTTIMEOUT) # Checking For Time Out
             if (fileObject.readCurrentTask() == "5"): # Checking if Enrollment is Cancelled or Not
                 continueEnrollment = False
-                turnLEDON('R')
-                turnOnBuzzer(0)
+                gpioObject.turnLEDON('R')
+                gpioObject.turnOnBuzzer(0)
                 break
             print("Flag For Device Response x: {}".format(x))
             print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
-            turnLEDON('OFF')
+            gpioObject.turnLEDON('OFF')
             t.sleep(1)
-            turnLEDON('W')
+            gpioObject.turnLEDON('W')
         print("Flag For Device Response x: {}".format(x))
         print("Flag For Continue Enrollment Response continueEnrollment: {}".format(continueEnrollment))
-        turnLEDON('OFF')
+        gpioObject.turnLEDON('OFF')
         return (x,continueEnrollment)
     except Exception as e:
         print("Exception From : {}\n Exception Message: {}".format("takefingerPrint",str(e)))
@@ -383,19 +357,6 @@ def waitForServerInstructionToCome(desiredCommand, currentDateTime):
         y = True
         return (currentTask, x, y)
     
-def enrollmentLEDIndicator(color):
-    turnLEDON('OFF')
-    if color == 'R':
-        turnLEDON('R')
-        turnOnBuzzer(0)
-#        turnLEDON('OFF')
-    elif color == 'G':
-        turnLEDON('G')
-        turnOnBuzzer(1)
-#        t.sleep(1) # Wait for the User to Remove the Finger
-#        turnLEDON('OFF')
-        
-    
 def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
     print("Inside Function: {}".format("takeFingerprintToEnroll"))
     x = False # Flag to check Enrollment Timeout
@@ -423,7 +384,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
             else:
 #                sendPusherCommand(hardwareId,"FIRST_FINGER_TAKEN",requestId) # Send First Finger Taken Confirmation to the Server
                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"FIRST_FINGER_TAKEN")
-                enrollmentLEDIndicator('G')
+                gpioObject.enrollmentLEDIndicator('G')
                 print("First Finger Taken")
                 
                 x,continueEnrollment = waitToRemoveFinger(f,currentDateTime)
@@ -433,7 +394,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
 #                    sendPusherCommand(hardwareId,"REMOVED1",requestId) # Send Removed Command To the Server First Time
                     apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REMOVED1")
 #                    turnLEDON('OFF')
-                    turnLEDON('G+B')
+                    gpioObject.turnLEDON('G+B')
                     t.sleep(1)
                     print("Removed Sent")
                     
@@ -443,7 +404,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
                         return "Enrollment Cancelled"
                     
                     elif y == True: # Response Timeout Check
-                        sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout Response to the Server
+#                        sendPusherCommand(hardwareId,"TIME_OUT",requestId) # Send Timeout Response to the Server
                         apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"TIME_OUT")
                         print("Enrollment Timeout")
                         return "Request Time Out"
@@ -465,7 +426,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
                                 print("Second Finger Taken")
 #                                sendPusherCommand(hardwareId,"SECOND_FINGER_TAKEN",requestId) # Send Second Time Finger Taken To the Server
                                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"SECOND_FINGER_TAKEN")
-                                enrollmentLEDIndicator('G')
+                                gpioObject.enrollmentLEDIndicator('G')
                                 
                                 x,continueEnrollment = waitToRemoveFinger(f,currentDateTime)
                                 print("Flag For Device Response x: {}".format(x))
@@ -474,7 +435,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
 #                                    sendPusherCommand(hardwareId,"REMOVED2",requestId)
                                     apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REMOVED2")
 #                                    turnLEDON('OFF')
-                                    turnLEDON('G+B')
+                                    gpioObject.turnLEDON('G+B')
                                     t.sleep(1)
                                     
                                     currentTask, x, y = waitForServerInstructionToCome('4', currentDateTime)
@@ -502,7 +463,7 @@ def takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId):
                                                 print("Finger Matched")
 #                                                sendPusherCommand(hardwareId,"THIRD_FINGER_TAKEN",requestId) # Send Third Finger Taken to THe Server
                                                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"THIRD_FINGER_TAKEN")
-                                                enrollmentLEDIndicator('G')
+                                                gpioObject.enrollmentLEDIndicator('G')
                                                 return "Finger Matched"
                                         else:
 #                                            sendPusherCommand(hardwareId,"TIME_OUT",requestId)
@@ -573,14 +534,14 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
     try:
         fingerInput = takeFingerprintToEnroll(f,currentDateTime,deviceId,uniqueId,requestId)
         if fingerInput == "Finger Matched" :
-            turnLEDON('G+B')
+            gpioObject.turnLEDON('G+B')
             status = createNewTemplate(f,uniqueId,deviceId,dbObject,database)
             print("Registration Status: {}".format(status))
             if status == "1":
 #                sendPusherCommand(hardwareId,"REGISTED_SUCCESSFULLY",requestId)
                 updateListOfUsedTemplates(f)
                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"REGISTED_SUCCESSFULLY")
-                enrollmentLEDIndicator('G')
+                gpioObject.enrollmentLEDIndicator('G')
                 fileObject.updateRequestId("0")
 #                turnLEDON('OFF')
                 print("Registered Successfuly")
@@ -588,68 +549,21 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
             else:
 #                sendPusherCommand(hardwareId,"NOT_REGISTED_SUCCESSFULLY",requestId)
                 apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"NOT_REGISTED_SUCCESSFULLY")
-                enrollmentLEDIndicator('R')
+                gpioObject.enrollmentLEDIndicator('R')
                 fileObject.updateRequestId("0")
 #                turnLEDON('OFF')
                 print("Registered Unsuccessfuly")
         else:
-            enrollmentLEDIndicator('R')
+            gpioObject.enrollmentLEDIndicator('R')
 #            turnLEDON('OFF')
             fileObject.updateRequestId("0")
     except Exception as e:
         print("Exception From : {}\n Exception Message: {}".format("enrollNewEmployee",str(e)))
         fileObject.updateExceptionMessage("sasMain{enrollNewEmployee}: ",str(e))
-        enrollmentLEDIndicator('R')
+        gpioObject.enrollmentLEDIndicator('R')
 #        fileObject.updateRequestId("0")
 #        sendPusherCommand(hardwareId,"TIME_OUT",requestId)
         apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"TIME_OUT")
-
-def turnLEDON(color):
-    print("Requested Color: {}".format(color))
-    if color == 'R':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 0)
-    elif color == 'G':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 0)
-    elif color == 'B':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'W':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'R+G':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 0)
-    elif color == 'G+B':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 1)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'R+B':
-        GPIO.output(redLightPin, 1)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 1)
-    elif color == 'OFF':
-        GPIO.output(redLightPin, 0)
-        GPIO.output(greenLightPin, 0)
-        GPIO.output(blueLightPin, 0)
-    
-def turnOnBuzzer(access):
-    GPIO.output(buzzerPin, 1)
-    if access == 1:
-        t.sleep(.4)
-    else:
-        t.sleep(.1)
-        GPIO.output(buzzerPin, 0)
-        t.sleep(.1)
-        GPIO.output(buzzerPin, 1)
-        t.sleep(.1)
-    GPIO.output(buzzerPin, 0)
     
 def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):
     print("Inside Function: {}".format("createEventLogg"))
@@ -667,18 +581,17 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag,\
                                      database)
             print("No Card Record Found")
-            accessDenied()
+            gpioObject.accessDenied()
 #            turnLEDON('OFF') #OFF
         else :
             print("Card Record Found")
-            GPIO.output(greenLightPin, 1)
             dbObject.insertEventTime(employeeDetails[0],\
                                      employeeCardorFingerNumber,\
                                      currentDateTime,\
                                      attendanceFlag,\
                                      database)
             print("Event Created Successfully")
-            accessGranted()
+            gpioObject.accessGranted()
 #            turnLEDON('OFF') #OFF
     elif attendanceFlag == '1': #################################################Check For Secondary Address in event script######
         employeeDetails = dbObject.getEmployeeDetails(employeeCardorFingerNumber,database)
@@ -691,25 +604,12 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag, \
                                      database)
             print("Event Created Successfully")
-            accessGranted()
+            gpioObject.accessGranted()
             return 1
         else:
             print("No Finger Record Found")
-            accessDenied()
+            gpioObject.accessDenied()
             return 0
-
-def accessDenied():
-    turnLEDON('R') #RED
-    turnOnBuzzer(0)
-#    t.sleep(.5)
-#    turnLEDON('OFF') #OFF
-    
-def accessGranted():
-    doorStatus(0)
-    turnLEDON('G') #GREEN
-    turnOnBuzzer(1)
-#    t.sleep(.5)
-#    turnLEDON('OFF') #OFF
     
 def matchFingerPrint(f,dbObject,database):
     try:
@@ -720,7 +620,7 @@ def matchFingerPrint(f,dbObject,database):
         print("Position Number Found: {}".format(positionNumber))
         if (positionNumber == -1):
             print("No Finger Record Found")
-            accessDenied()
+            gpioObject.accessDenied()
         else:
             fingerFlag = createEventLogg(positionNumber,'1',dbObject,database)
             if fingerFlag == 0:
@@ -741,8 +641,8 @@ def workWithFingerPrintSensor():
             database = dbObject.connectDataBase()
             print("Connected With Database From workWithFingerPrintSensor")
             while True:
-                turnLEDON('OFF')
-                doorStatus(1)
+                gpioObject.turnLEDON('OFF')
+                gpioObject.doorStatus(0)
                 while (f.readImage() == False):
 #                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
                     currentTask = fileObject.readCurrentTask()
@@ -807,8 +707,8 @@ def workWithRFSensor():
             database = dbObject.connectDataBase()
             while True:
 #                print("Current workWithRFSensor Thread ID: {}".format(threading.current_thread()))
-                turnLEDON('OFF')
-                doorStatus(1)
+                gpioObject.turnLEDON('OFF')
+                gpioObject.doorStatus(0)
                 rfScannerValue = readFromRFIDScanner()
                 employeeCardNumber = int(rfScannerValue,16)
                 print("Read Card Number: {}".format(employeeCardNumber))

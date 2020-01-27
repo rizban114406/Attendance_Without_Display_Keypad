@@ -258,16 +258,16 @@ def checkPusherConfiguration(deviceInfo):
     try:
         appId, key, secret, cluster = fileObject.readPusherAppKey()
         isChangeRequired = 0
-        if (appId != deviceInfo['appId']):
+        if (appId != deviceInfo['appId'] and deviceInfo['appId'] != ""):
             appId = deviceInfo['appId']
             isChangeRequired = 1
-        if (key != deviceInfo['key']):
+        if (key != deviceInfo['key'] and deviceInfo['key'] != ""):
             key = deviceInfo['key']
             isChangeRequired = 1
-        if (secret != deviceInfo['secret']):
+        if (secret != deviceInfo['secret'] and deviceInfo['secret'] != ""):
             secret = deviceInfo['secret']
             isChangeRequired = 1
-        if (cluster != deviceInfo['cluster']):
+        if (cluster != deviceInfo['cluster'] and deviceInfo['cluster'] != ""):
             cluster = deviceInfo['cluster']
             isChangeRequired = 1
         if isChangeRequired == 1:

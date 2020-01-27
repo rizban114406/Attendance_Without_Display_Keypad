@@ -22,7 +22,8 @@ database = dbObject.connectDataBase()
 
 #pusherSend = push.Pusher(appId, key, secret)
 #pusherReceive = pysher.Pusher(key)
-
+from sasGPIO import sasGPIO
+gpioObject = sasGPIO()
 from sasFile import sasFile
 fileObject = sasFile()
 fileObject.updateRequestId("0")
@@ -99,8 +100,10 @@ while True:
                         if task == '1':
                             if (localOutput['data']['inventory'] == 0):
                                 apiObjectSecondary.confirmDeviceStatus(hardwareId,0)
+                                gpioObject.blinkDevice()
                             elif (localOutput['data']['inventory'] == 1):
                                 apiObjectPrimary.confirmDeviceStatus(hardwareId,0)
+                                gpioObject.blinkDevice()
                         else:
                             if (localOutput['data']['inventory'] == 0):
                                 apiObjectSecondary.confirmDeviceStatus(hardwareId,1)
@@ -155,9 +158,12 @@ while True:
                             deviceId = dbObject.getDeviceId(database)
                             apiObjectPrimary.confirmUpdateRequest(deviceId)
                             
+                            
                         elif (localOutput['data']['inventory'] == 0 and \
                             dbObject.checkAddressUpdateRequired(2, database) == 0):
                             dbObject.resetUpdatedRequiredStatus(2, database)
+                            deviceId = dbObject.getDeviceId(database)
+                            apiObjectSecondary.confirmUpdateRequest(deviceId)
                         output = "" 
                     output = ""
     else:

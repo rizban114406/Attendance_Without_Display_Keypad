@@ -46,7 +46,7 @@ class sasAllAPI:
             else:
                 return ("No","")
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{getFingerId}",exceptionMessage)
             return ("Server Error","")
 
@@ -65,7 +65,7 @@ class sasAllAPI:
             else:
                 return "Not Successfull"
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{sendEventData}",exceptionMessage)
             return str(e)
         
@@ -99,7 +99,7 @@ class sasAllAPI:
             else:
                 return "Some Thing Is Wrong"       
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{getDataToSync}",exceptionMessage)
             return "Server Error"
 
@@ -120,7 +120,7 @@ class sasAllAPI:
                 return "Some Thing Is Wrong"
         
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{getCardDataToSync}",exceptionMessage)
             return "Server Error"
         
@@ -139,7 +139,7 @@ class sasAllAPI:
             else:
                 return '0'   
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{createDevice}",exceptionMessage)
             return "Server Error"
         
@@ -159,7 +159,7 @@ class sasAllAPI:
             else:
                 return 2   
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{checkUpdateRequest}",exceptionMessage)
             return 2
         
@@ -177,7 +177,7 @@ class sasAllAPI:
             else:
                 return 0   
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{confirmUpdateRequest}",exceptionMessage)
             return 0
         
@@ -196,7 +196,7 @@ class sasAllAPI:
                 return '0'
         
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{confirmSyncStatusReceived}",exceptionMessage)
             return "Server Error"
         
@@ -216,7 +216,7 @@ class sasAllAPI:
             return '0'
         
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{getAllConfigurationDetails}",exceptionMessage)
             return "Server Error"
         
@@ -235,7 +235,7 @@ class sasAllAPI:
             else:
                 return 0       
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{updateDeviceInfoToServer}",exceptionMessage)
             return 0
         
@@ -255,7 +255,7 @@ class sasAllAPI:
                 return '0'
 
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{confirmDeviceStatus}",exceptionMessage)
             return "Server Error"
     
@@ -280,7 +280,7 @@ class sasAllAPI:
                 return 0
 
         except Exception as e:
-            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + payload 
+            exceptionMessage = str(e) + "\n" + "URL: " + mainURL + "\n" + "Data: " + str(payload) 
             fileObject.updateExceptionMessage("sasAllAPI{replyPusherMessage}",exceptionMessage)
             return 0
     
