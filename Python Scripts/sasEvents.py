@@ -13,6 +13,7 @@ apiObjectSecondary = sasAllAPI(2)
 if __name__ == '__main__':
     global apiObjectSecondary
     deviceId = dbObject.getDeviceId(database)
+    gpioObject.turnLEDON('R+B')
     if deviceId != 0:
         if (dbObject.checkSecondaryAddressAvailable(database) == 1 and\
             fileObject.readSyncStatus() == '0'):

@@ -30,7 +30,6 @@ fileObject.updateRequestId("0")
 fileObject.updateCurrentTask("1")
 
 from sasAllAPI import sasAllAPI
-apiObjectSecondary = sasAllAPI(2)
 apiObjectPrimary = sasAllAPI(1)
 
 output = ""
@@ -95,7 +94,8 @@ while True:
                 commandRequested = localOutput['data']['command']
                 task = fileObject.readCurrentTask()
                 requestId = fileObject.readRequestId()
-                if(hardwareId == hardwareIdRequested):          
+                if(hardwareId == hardwareIdRequested):
+                    apiObjectSecondary = sasAllAPI(2)
                     if (commandRequested == "ONLINE_FLAG"):
                         if task == '1':
                             if (localOutput['data']['inventory'] == 0):

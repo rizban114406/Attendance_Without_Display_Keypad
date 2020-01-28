@@ -7,7 +7,7 @@ Created on Tue Jan 28 00:42:19 2020
 import RPi.GPIO as GPIO
 import time as t
 class sasGPIO:
-    def __init__(self, locationType):
+    def __init__(self):
         self.redLightPin = 21
         self.greenLightPin = 20
         self.blueLightPin = 13

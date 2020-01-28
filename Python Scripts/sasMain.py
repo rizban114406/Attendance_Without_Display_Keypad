@@ -47,6 +47,9 @@ apiObject = sasAllAPI(2)
 
 REQUESTTIMEOUT = 5
 ENROLLMENTTIMEOUT = 150
+DOORLOCKTIMEOUT = 5
+
+doorOpenTime = "0"
 def configureFingerPrint():
     while True:
         try:
@@ -119,8 +122,6 @@ def checkEmployeeInfoTable(dbObject,database):
         
 def syncUsersToSensor(f,dbObject,database):
     try:
-        global apiObject
-        apiObject = sasAllAPI(2)
         print("Inside Function: {}".format("syncUsersToSensor"))
         getDataToDelete = dbObject.getInfoFromTempTableToDelete(database)
         print("Finger Delete Request: {}".format(getDataToDelete))
@@ -246,6 +247,8 @@ def syncronizationProcess():
                 database = dbObject.connectDataBase()
                 deviceId = dbObject.getDeviceId(database)
                 if deviceId != 0:
+                    global apiObject
+                    apiObject = sasAllAPI(2)
                     getRFCardInformation(deviceId,dbObject,database)
                     fingerSyncStatus = getFingerprintInformation(deviceId,dbObject,database)
                     
@@ -566,6 +569,7 @@ def enrollNewEmployee(f,deviceId,dbObject,database):
         apiObject.replyPusherMessage(deviceId, hardwareId, uniqueId,"TIME_OUT")
     
 def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database):
+    global doorOpenTime
     print("Inside Function: {}".format("createEventLogg"))
     currentDateTime,currentTime = checkCurrentDateTime()
     print("Current Datetime: {}".format(currentDateTime))
@@ -591,6 +595,7 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag,\
                                      database)
             print("Event Created Successfully")
+            doorOpenTime = currentDateTime
             gpioObject.accessGranted()
 #            turnLEDON('OFF') #OFF
     elif attendanceFlag == '1': #################################################Check For Secondary Address in event script######
@@ -604,6 +609,7 @@ def createEventLogg(employeeCardorFingerNumber,attendanceFlag,dbObject,database)
                                      attendanceFlag, \
                                      database)
             print("Event Created Successfully")
+            doorOpenTime = currentDateTime
             gpioObject.accessGranted()
             return 1
         else:
@@ -632,6 +638,7 @@ def matchFingerPrint(f,dbObject,database):
 def workWithFingerPrintSensor():
     global currentTask
     global syncStatus
+    global doorOpenTime
     while True:
         try:
             f = configureFingerPrint()
@@ -642,13 +649,18 @@ def workWithFingerPrintSensor():
             print("Connected With Database From workWithFingerPrintSensor")
             while True:
                 gpioObject.turnLEDON('OFF')
-                gpioObject.doorStatus(0)
+#                gpioObject.doorStatus(0)
                 while (f.readImage() == False):
 #                    print("Current workWithFingerPrintSensor Thread ID: {}".format(threading.current_thread()))
                     currentTask = fileObject.readCurrentTask()
                     syncStatus = fileObject.readSyncStatus()
                     print("Device Current Task: {}".format(currentTask))
                     print("Device Syncronization Request Flag: {}".format(syncStatus))
+                    print("Device Door Status: {}".format(doorOpenTime))
+                    if (doorOpenTime != "0"):
+                        if calculateTimeDifference(doorOpenTime,DOORLOCKTIMEOUT) == True:
+                            gpioObject.doorStatus(0)
+                            doorOpenTime = "0"
                     if (currentTask == '2' or syncStatus == '2'):
                         break
                     t.sleep(.01)
@@ -708,7 +720,7 @@ def workWithRFSensor():
             while True:
 #                print("Current workWithRFSensor Thread ID: {}".format(threading.current_thread()))
                 gpioObject.turnLEDON('OFF')
-                gpioObject.doorStatus(0)
+#                gpioObject.doorStatus(0)
                 rfScannerValue = readFromRFIDScanner()
                 employeeCardNumber = int(rfScannerValue,16)
                 print("Read Card Number: {}".format(employeeCardNumber))
