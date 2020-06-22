@@ -663,7 +663,7 @@ def workWithFingerPrintSensor():
                             doorOpenTime = "0"
                     if (currentTask == '2' or syncStatus == '2'):
                         break
-                    t.sleep(.01)
+                    t.sleep(.5)
                 lock.acquire()
                 print("Inside Finger Recognition Part")
                 currentTask = fileObject.readCurrentTask()
