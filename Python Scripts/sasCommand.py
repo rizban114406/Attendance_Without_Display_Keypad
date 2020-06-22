@@ -136,7 +136,7 @@ while True:
                         output = ""   
                             
                     if (commandRequested == "SYNC_DEVICE"):
-                        if (fileObject.readSyncStatus() == '0'):
+                        if (fileObject.readSyncStatus() == '0' or fileObject.readSyncStatus() == ''):
                             fileObject.updateSyncStatus('1')
                         output = ""
                     
